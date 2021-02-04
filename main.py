@@ -5,13 +5,18 @@ from PIL.ExifTags import TAGS
 import gpxpy
 import gpxpy.gpx
 from datetime import datetime
+from datetime import timedelta
 import time
 import os
 import subprocess
 import json
 
 
+# Time correction to apply to photo time
+correction = timedelta(0, 49)
+
 path = '/Users/lawrence/Pictures/Photos/2021/2021_04_Byfleet'
+osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
 
 
 def get_locality(latitude, longitude):
@@ -35,23 +40,27 @@ def get_locations(gpx_xml, photos):
     """
     # Variables
     photo_count = 0
-    output_data = 'Photo,Date/Time,Lat,Long,Location\n'
+    output_data = 'Photo,Date/Time,Lat,Long,Link,Location\n'
 
     # Parse to gpx and iterate through
     input_gpx = gpxpy.parse(gpx_xml)
     for track in input_gpx.tracks:
         for segment in track.segments:
             for point in segment.points:
+                # Apply correction
+#                point.time = point.time + correction
                 point_time = time.localtime(point.time.timestamp())
-                rec = photos[photo_count]
-                photo_time = time.localtime(photos[photo_count][0].timestamp())
+#                rec = photos[photo_count]
+                corrected_photo_time = photos[photo_count][0] + correction
+                photo_time = time.localtime(corrected_photo_time.timestamp())
                 if point_time > photo_time:
-                    locality = get_locality(point.latitude, point.longitude)
-                    s = '%s,%s,%f,%f,%s\n' % (photos[photo_count][1],
-                                                      photos[photo_count][0].strftime('%d:%m:%Y %H:%M:%S'),
-                                                      point.latitude,
-                                                      point.longitude,
-                                                      get_locality(point.latitude, point.longitude))
+                    osm_link = osm_location_format % (point.latitude, point.longitude, point.latitude, point.longitude)
+                    s = '%s,%s,%f,%f,"%s","%s"\n' % (photos[photo_count][1],
+                                                   corrected_photo_time.strftime('%d:%m:%Y %H:%M:%S'),
+                                                   point.latitude,
+                                                   point.longitude,
+                                                   osm_link,
+                                                   get_locality(point.latitude, point.longitude))
                     print(s)
                     output_data += s
                     photo_count += 1
