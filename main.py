@@ -13,9 +13,11 @@ import json
 
 
 # Time correction to apply to photo time
-correction = timedelta(0, 49)
+path = '/Users/lawrence/Pictures/Photos/2021/2021_06_ChertseyMeads'
+correction_seconds = 48
+correction = timedelta(0, correction_seconds)
 
-path = '/Users/lawrence/Pictures/Photos/2021/2021_04_Byfleet'
+# path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
 
 
@@ -53,7 +55,11 @@ def get_locations(gpx_xml, photos):
 #                rec = photos[photo_count]
                 corrected_photo_time = photos[photo_count][0] + correction
                 photo_time = time.localtime(corrected_photo_time.timestamp())
-                if point_time > photo_time:
+                # May be many photos at one point
+                while point_time > photo_time and photo_count < len(photos):
+                    corrected_photo_time = photos[photo_count][0] + correction
+                    photo_time = time.localtime(corrected_photo_time.timestamp())
+
                     osm_link = osm_location_format % (point.latitude, point.longitude, point.latitude, point.longitude)
                     s = '%s,%s,%f,%f,"%s","%s"\n' % (photos[photo_count][1],
                                                    corrected_photo_time.strftime('%d:%m:%Y %H:%M:%S'),
@@ -64,13 +70,24 @@ def get_locations(gpx_xml, photos):
                     print(s)
                     output_data += s
                     photo_count += 1
+
                 if photo_count >= len(photos):
                     break
+
+    print('%s matched out of %s' % (photo_count, len(photos)))
+    with open(path + '/location.txt', 'w') as logfile:
+        logfile.write('%s\nPath = %s\nCorrection = %d sec\n%d matched out of %d' %
+                      (datetime.now(),
+                       path,
+                       correction_seconds,
+                       photo_count,
+                       len(photos)))
 
     return output_data
 
 
 def get_exif_data():
+
     list = []
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
@@ -83,8 +100,8 @@ def get_exif_data():
                     break
 
     list.sort()
-#    for item in list:
-#        print(item)
+    # for item in list:
+    #     print(item)
 
     for entry in os.scandir(path):
         if (entry.path.endswith(".gpx")):
@@ -94,7 +111,9 @@ def get_exif_data():
             with open(path + '/locations.csv', 'w') as csv_file:
                 csv_file.write(csv_data)
 
-# Press the green button in the gutter to run the script.
+
+
+
 if __name__ == '__main__':
     get_exif_data()
 
