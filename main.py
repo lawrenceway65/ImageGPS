@@ -10,14 +10,20 @@ import time
 import os
 import subprocess
 import json
+import piexif
+
+# EXIF magic numbers from CIPA DC- 008-Translation- 2012
+DateTimeOriginal = 36867
+DateTimeDigitized = 36868
+
 
 # System specific path
 if os.name == 'nt':
-    path = "D:\\Pictures\\2021\\2021_06_ChertseyMeads"
+    path = "D:\\Pictures\\2021\\2021_05_AddlestoneMorningWalk"
 else:
     path = '/Users/lawrence/Pictures/Photos/2021/2021_06_ChertseyMeads'
 # Time correction to apply to photo time
-correction_seconds = 51
+correction_seconds = 0
 correction = timedelta(0, correction_seconds)
 
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
@@ -97,13 +103,20 @@ def get_exif_data():
     list = []
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
-            image = Image.open(entry.path)
-            exif = image.getexif()
-            for tag, value in exif.items():
-                if TAGS.get(tag, tag) == 'DateTimeOriginal':
-                    rec = (datetime.strptime(value, "%Y:%m:%d %H:%M:%S"), os.path.basename(entry.path))
-                    list.append(rec)
-                    break
+            exif_dict = piexif.load(entry.path)
+            # for ifd_name in exif_dict:
+            #     if ifd_name == 'thumbnail':
+            #         break
+            #     print("\n{0} IFD:".format(ifd_name))
+            #     for key in exif_dict[ifd_name]:
+            #         try:
+            #             print(key, exif_dict[ifd_name][key][:20])
+            #         except:
+            #             print(key, exif_dict[ifd_name][key])
+
+            photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+            rec = (datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"), os.path.basename(entry.path))
+            list.append(rec)
     # Sort list by date/time
     list.sort()
     # for item in list:
