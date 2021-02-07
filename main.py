@@ -12,19 +12,22 @@ import subprocess
 import json
 import piexif
 
-# EXIF magic numbers from CIPA DC- 008-Translation- 2012
+# EXIF magic numbers from CIPA DC-008-Translation-2012
 DateTimeOriginal = 36867
 DateTimeDigitized = 36868
 
-
 # System specific path
 if os.name == 'nt':
-    path = "D:\\Pictures\\2021\\2021_05_AddlestoneMorningWalk"
+    path = "D:\\Pictures\\2021\\2021_Test_AddlestoneMorningWalk"
 else:
     path = '/Users/lawrence/Pictures/Photos/2021/2021_06_ChertseyMeads'
+
 # Time correction to apply to photo time
-correction_seconds = 0
+correction_seconds = -30
 correction = timedelta(0, correction_seconds)
+
+# Controls if metadata should be updated
+update_exif = True
 
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
@@ -69,8 +72,10 @@ def match_locations(gpx_xml, photos):
                                                    corrected_photo_time.strftime('%d:%m:%Y %H:%M:%S'),
                                                    point.latitude,
                                                    point.longitude,
-                                                   osm_link,
-                                                   get_locality(point.latitude, point.longitude))
+                                                   'osm_link',
+                                                   'get_locality(point.latitude, point.longitude)')
+                                                   # osm_link,
+                                                   # get_locality(point.latitude, point.longitude))
                     print(s)
                     output_data += s
                     output_data += '\n'
@@ -131,6 +136,24 @@ def get_exif_data():
             with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
                 csv_file.write(csv_data)
 
+    # If required, make the correction
+    if update_exif:
+        for entry in os.scandir(path):
+            if (entry.path.endswith(".jpg")):
+                exif_dict = piexif.load(entry.path)
+                original_time = datetime.strptime(exif_dict['Exif'][DateTimeOriginal].decode(), "%Y:%m:%d %H:%M:%S")
+                digitization_time = datetime.strptime(exif_dict['Exif'][DateTimeDigitized].decode(), "%Y:%m:%d %H:%M:%S")
+                new_original_time = original_time + correction
+                new_digitization_time = original_time + correction
+                print('Old: %s; New: %s; Correction: %d' % (original_time, new_original_time, correction_seconds))
+
+                # Write the data
+                new_original_time_b = new_original_time.strftime("%Y:%m:%d %H:%M:%S").encode()
+                exif_dict['Exif'][DateTimeOriginal] = new_original_time_b
+
+                exif_bytes = piexif.dump(exif_dict)
+                jpeg_file = Image.open(entry.path)
+                jpeg_file.save('%s' % entry.path, "jpeg", exif=exif_bytes)
 
 
 
