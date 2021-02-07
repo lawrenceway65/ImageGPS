@@ -141,20 +141,20 @@ def get_exif_data():
         for entry in os.scandir(path):
             if (entry.path.endswith(".jpg")):
                 exif_dict = piexif.load(entry.path)
-                original_time = datetime.strptime(exif_dict['Exif'][DateTimeOriginal].decode(), "%Y:%m:%d %H:%M:%S")
-                digitization_time = datetime.strptime(exif_dict['Exif'][DateTimeDigitized].decode(), "%Y:%m:%d %H:%M:%S")
-                new_original_time = original_time + correction
-                new_digitization_time = original_time + correction
-                print('Old: %s; New: %s; Correction: %d' % (original_time, new_original_time, correction_seconds))
+                corrected_original_time = datetime.strptime(exif_dict['Exif'][DateTimeOriginal].decode(), "%Y:%m:%d %H:%M:%S") + correction
+                corrected_digitization_time = datetime.strptime(exif_dict['Exif'][DateTimeDigitized].decode(), "%Y:%m:%d %H:%M:%S") + correction
+                print('Old: %s; New: %s; Correction: %d'
+                      % (datetime.strptime(exif_dict['Exif'][DateTimeOriginal].decode(), "%Y:%m:%d %H:%M:%S"),
+                         corrected_original_time,
+                         correction_seconds))
 
                 # Write the data
-                new_original_time_b = new_original_time.strftime("%Y:%m:%d %H:%M:%S").encode()
-                exif_dict['Exif'][DateTimeOriginal] = new_original_time_b
+                exif_dict['Exif'][DateTimeOriginal] = corrected_original_time.strftime("%Y:%m:%d %H:%M:%S").encode()
+                exif_dict['Exif'][DateTimeDigitized] = corrected_digitization_time.strftime("%Y:%m:%d %H:%M:%S").encode()
 
                 exif_bytes = piexif.dump(exif_dict)
                 jpeg_file = Image.open(entry.path)
-                jpeg_file.save('%s' % entry.path, "jpeg", exif=exif_bytes)
-
+                jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
 
 
 if __name__ == '__main__':
