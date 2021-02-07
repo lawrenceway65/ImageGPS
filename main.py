@@ -74,11 +74,11 @@ def match_locations(gpx_xml, photos):
                     corrected_photo_time = photos[photo_count][0] + correction
                     photo_time = time.localtime(corrected_photo_time.timestamp())
 
-
                 if photo_count >= len(photos):
                     break
 
     print('%s matched out of %s' % (photo_count, len(photos)))
+    # Log correction used and result
     with open(path + '/location.txt', 'w') as logfile:
         logfile.write('%s\nPath = %s\nCorrection = %d sec\n%d matched out of %d' %
                       (datetime.now(),
@@ -114,7 +114,8 @@ def get_exif_data():
             with open(entry.path, 'r') as file:
                 gpx_data = file.read()
             csv_data = match_locations(gpx_data, list)
-            with open(path + '/locations.csv', 'w') as csv_file:
+            print(entry.path.replace('.gpx', '') + '_locations.csv')
+            with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
                 csv_file.write(csv_data)
 
 
