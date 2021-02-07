@@ -11,10 +11,13 @@ import os
 import subprocess
 import json
 
-
+# System specific path
+if os.name == 'nt':
+    path = "D:\\Pictures\\2021\\2021_06_ChertseyMeads"
+else:
+    path = '/Users/lawrence/Pictures/Photos/2021/2021_06_ChertseyMeads'
 # Time correction to apply to photo time
-path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
-correction_seconds = -4574
+correction_seconds = 51
 correction = timedelta(0, correction_seconds)
 
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
@@ -30,13 +33,13 @@ def get_locality(latitude, longitude):
     result = subprocess.check_output(['curl', '-s', osm_request % (latitude, longitude)]).decode("utf-8")
     result_json = json.loads(result)
 
-    # Extract second item from 'display_name'
+    # Return full address for location ('display_name')
     return result_json['display_name']
 
 
-def get_locations(gpx_xml, photos):
-    """For each photo record find the co-ordinated for the matching time from the gpx data
-
+def match_locations(gpx_xml, photos):
+    """For each photo record, find the co-ordinates for the matching time from the gpx data
+    If a correction is set apply it to the photo time (for when camera time was set wrong).
     :param gpx_xml: gpx data
     :type gpx_xml: xml
     """
@@ -89,6 +92,7 @@ def get_locations(gpx_xml, photos):
 
 def get_exif_data():
 
+    # Build list photos with date taken from exif metadata
     list = []
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
@@ -99,16 +103,17 @@ def get_exif_data():
                     rec = (datetime.strptime(value, "%Y:%m:%d %H:%M:%S"), os.path.basename(entry.path))
                     list.append(rec)
                     break
-
+    # Sort list by date/time
     list.sort()
     # for item in list:
     #     print(item)
 
+    # Build csv file with location matching photo time
     for entry in os.scandir(path):
         if (entry.path.endswith(".gpx")):
             with open(entry.path, 'r') as file:
                 gpx_data = file.read()
-            csv_data = get_locations(gpx_data, list)
+            csv_data = match_locations(gpx_data, list)
             with open(path + '/locations.csv', 'w') as csv_file:
                 csv_file.write(csv_data)
 
