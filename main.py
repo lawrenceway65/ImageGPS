@@ -59,7 +59,7 @@ def match_locations(gpx_xml, photos):
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photos):
                     osm_link = osm_location_format % (point.latitude, point.longitude, point.latitude, point.longitude)
-                    s = '%s,%s,%f,%f,"%s","%s"\n' % (photos[photo_count][1],
+                    s = '%s,%s,%f,%f,"%s","%s"' % (photos[photo_count][1],
                                                    corrected_photo_time.strftime('%d:%m:%Y %H:%M:%S'),
                                                    point.latitude,
                                                    point.longitude,
@@ -67,6 +67,7 @@ def match_locations(gpx_xml, photos):
                                                    get_locality(point.latitude, point.longitude))
                     print(s)
                     output_data += s
+                    output_data += '\n'
                     # Next one
                     photo_count += 1
                     if photo_count >= len(photos):
@@ -114,7 +115,6 @@ def get_exif_data():
             with open(entry.path, 'r') as file:
                 gpx_data = file.read()
             csv_data = match_locations(gpx_data, list)
-            print(entry.path.replace('.gpx', '') + '_locations.csv')
             with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
                 csv_file.write(csv_data)
 
