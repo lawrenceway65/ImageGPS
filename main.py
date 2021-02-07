@@ -13,8 +13,8 @@ import json
 
 
 # Time correction to apply to photo time
-path = '/Users/lawrence/Pictures/Photos/2021/2021_06_ChertseyMeads'
-correction_seconds = 48
+path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
+correction_seconds = -4574
 correction = timedelta(0, correction_seconds)
 
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
@@ -49,17 +49,12 @@ def get_locations(gpx_xml, photos):
     for track in input_gpx.tracks:
         for segment in track.segments:
             for point in segment.points:
-                # Apply correction
-#                point.time = point.time + correction
                 point_time = time.localtime(point.time.timestamp())
-#                rec = photos[photo_count]
+                # Apply correction
                 corrected_photo_time = photos[photo_count][0] + correction
                 photo_time = time.localtime(corrected_photo_time.timestamp())
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photos):
-                    corrected_photo_time = photos[photo_count][0] + correction
-                    photo_time = time.localtime(corrected_photo_time.timestamp())
-
                     osm_link = osm_location_format % (point.latitude, point.longitude, point.latitude, point.longitude)
                     s = '%s,%s,%f,%f,"%s","%s"\n' % (photos[photo_count][1],
                                                    corrected_photo_time.strftime('%d:%m:%Y %H:%M:%S'),
@@ -69,7 +64,13 @@ def get_locations(gpx_xml, photos):
                                                    get_locality(point.latitude, point.longitude))
                     print(s)
                     output_data += s
+                    # Next one
                     photo_count += 1
+                    if photo_count >= len(photos):
+                        break
+                    corrected_photo_time = photos[photo_count][0] + correction
+                    photo_time = time.localtime(corrected_photo_time.timestamp())
+
 
                 if photo_count >= len(photos):
                     break
