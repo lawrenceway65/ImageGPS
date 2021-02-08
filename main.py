@@ -11,6 +11,8 @@ import os
 import subprocess
 import json
 import piexif
+from fractions import Fraction
+
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
 DateTimeOriginal = 36867
@@ -20,10 +22,10 @@ DateTimeDigitized = 36868
 if os.name == 'nt':
     path = "D:\\Pictures\\2021\\2021_Test_AddlestoneMorningWalk"
 else:
-    path = '/Users/lawrence/Pictures/Photos/2021/2021_06_ChertseyMeads'
+    path = '/Users/lawrence/Pictures/Photos/2021/2021_Test_AddlestoneMorningWalk'
 
 # Time correction to apply to photo time
-correction_seconds = -30
+correction_seconds = 48
 correction = timedelta(0, correction_seconds)
 
 # Controls if metadata should be updated
@@ -32,10 +34,69 @@ update_exif = True
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
 
+""" Next three functions from 
+https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
+with minor modes
+"""
+def to_deg(value, loc):
+    """convert decimal coordinates into degrees, munutes and seconds tuple
+    Keyword arguments: value is float gps-value, loc is direction list ["S", "N"] or ["W", "E"]
+    return: tuple like (25, 13, 48.343 ,'N')
+    """
+    if value < 0:
+        loc_value = loc[0]
+    elif value > 0:
+        loc_value = loc[1]
+    else:
+        loc_value = ""
+    abs_value = abs(value)
+    deg =  int(abs_value)
+    t1 = (abs_value-deg)*60
+    min = int(t1)
+    sec = round((t1 - min)* 60, 5)
+    return (deg, min, sec, loc_value)
+
+
+def change_to_rational(number):
+    """convert a number to rantional
+    Keyword arguments: number
+    return: tuple like (1, 2), (numerator, denominator)
+    """
+    f = Fraction(str(number))
+    return (f.numerator, f.denominator)
+
+
+def create_gps_dict(lat, long, elevation):
+    """Create GPS dictionary item as EXIF metadata
+    Keyword arguments:
+    :type lat: float
+    :type long: float
+    :type elevation: float
+    """
+    lat_deg = to_deg(lat, ["S", "N"])
+    lng_deg = to_deg(long, ["W", "E"])
+
+    exiv_lat = (change_to_rational(lat_deg[0]), change_to_rational(lat_deg[1]), change_to_rational(lat_deg[2]))
+    exiv_lng = (change_to_rational(lng_deg[0]), change_to_rational(lng_deg[1]), change_to_rational(lng_deg[2]))
+
+    gps_ifd = {
+        piexif.GPSIFD.GPSVersionID: (2, 0, 0, 0),
+        piexif.GPSIFD.GPSAltitudeRef: 1,
+        piexif.GPSIFD.GPSAltitude: change_to_rational(round(elevation)),
+        piexif.GPSIFD.GPSLatitudeRef: lat_deg[3],
+        piexif.GPSIFD.GPSLatitude: exiv_lat,
+        piexif.GPSIFD.GPSLongitudeRef: lng_deg[3],
+        piexif.GPSIFD.GPSLongitude: exiv_lng,
+    }
+
+    exif_dict = {"GPS": gps_ifd}
+
+    return exif_dict
+# End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
+
 
 def get_locality(latitude, longitude):
-    """Get location from co-ordinates. Use Open Street Map.
-    Using street level (zoom = 16) and picking second item, gives more accurate result
+    """Get location from co-ordinates, using Open Street Map.
     """
     osm_request = "https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&zoom=20&format=json"
     #   print(OSMRequest % (Latitude, Longitude))
@@ -72,13 +133,19 @@ def match_locations(gpx_xml, photos):
                                                    corrected_photo_time.strftime('%d:%m:%Y %H:%M:%S'),
                                                    point.latitude,
                                                    point.longitude,
-                                                   'osm_link',
-                                                   'get_locality(point.latitude, point.longitude)')
-                                                   # osm_link,
-                                                   # get_locality(point.latitude, point.longitude))
+                                                   # 'osm_link',
+                                                   # 'get_locality(point.latitude, point.longitude)')
+                                                   osm_link,
+                                                   get_locality(point.latitude, point.longitude))
                     print(s)
                     output_data += s
                     output_data += '\n'
+
+                    # Update lat long
+                    photos[photo_count][2] = point.latitude
+                    photos[photo_count][3] = point.longitude
+                    photos[photo_count][4] = point.elevation
+
                     # Next one
                     photo_count += 1
                     if photo_count >= len(photos):
@@ -109,23 +176,11 @@ def get_exif_data():
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
-            # for ifd_name in exif_dict:
-            #     if ifd_name == 'thumbnail':
-            #         break
-            #     print("\n{0} IFD:".format(ifd_name))
-            #     for key in exif_dict[ifd_name]:
-            #         try:
-            #             print(key, exif_dict[ifd_name][key][:20])
-            #         except:
-            #             print(key, exif_dict[ifd_name][key])
-
             photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
-            rec = (datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"), os.path.basename(entry.path))
+            rec = [datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"), os.path.basename(entry.path), 0.0, 0.0, 0.0]
             list.append(rec)
     # Sort list by date/time
     list.sort()
-    # for item in list:
-    #     print(item)
 
     # Build csv file with location matching photo time
     for entry in os.scandir(path):
@@ -136,6 +191,9 @@ def get_exif_data():
             with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
                 csv_file.write(csv_data)
 
+    # for item in list:
+    #     print(item)
+
     # If required, make the correction
     if update_exif:
         for entry in os.scandir(path):
@@ -143,6 +201,7 @@ def get_exif_data():
                 exif_dict = piexif.load(entry.path)
                 corrected_original_time = datetime.strptime(exif_dict['Exif'][DateTimeOriginal].decode(), "%Y:%m:%d %H:%M:%S") + correction
                 corrected_digitization_time = datetime.strptime(exif_dict['Exif'][DateTimeDigitized].decode(), "%Y:%m:%d %H:%M:%S") + correction
+                # Output a log - need to record when we do this
                 print('Old: %s; New: %s; Correction: %d'
                       % (datetime.strptime(exif_dict['Exif'][DateTimeOriginal].decode(), "%Y:%m:%d %H:%M:%S"),
                          corrected_original_time,
@@ -152,6 +211,13 @@ def get_exif_data():
                 exif_dict['Exif'][DateTimeOriginal] = corrected_original_time.strftime("%Y:%m:%d %H:%M:%S").encode()
                 exif_dict['Exif'][DateTimeDigitized] = corrected_digitization_time.strftime("%Y:%m:%d %H:%M:%S").encode()
 
+                # Find the photo in the list
+                for record in list:
+                    if record[1] == os.path.basename(entry.path):
+                        gps_dict = create_gps_dict(record[2], record[3], record[4])
+                        break
+
+                exif_dict.update(gps_dict)
                 exif_bytes = piexif.dump(exif_dict)
                 jpeg_file = Image.open(entry.path)
                 jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
