@@ -1,17 +1,15 @@
-""""Test displaying image"""
-import os
+""" Add a comment """
 from PIL import Image
-from PIL.ExifTags import TAGS
 import gpxpy
 import gpxpy.gpx
 from datetime import datetime
 from datetime import timedelta
 import time
 import os
-import subprocess
-import json
 import piexif
 from fractions import Fraction
+from photmetadata import PhotoMetadata
+import photmetadata
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -94,57 +92,6 @@ def create_gps_dict(lat, long, elevation):
     return exif_dict
 # End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
 
-
-class PhotoMetadata:
-    def __init__(self, filename, timestamp, latitude=0.0, longitude=0.0, elevation=0.0):
-        """Add new record. Initially just filename and timestamp
-        :type filename: str
-        :type timestamp: datetime
-        """
-#        print('Add %s' % filename)
-        self.filename = filename
-        self.timestamp = timestamp
-        self.latitude = latitude
-        self.longitude = longitude
-        self.elevation = elevation
-
-    def __lt__(self, other):
-        """Default sort is by timestamp"""
-        return self.timestamp < other.timestamp
-
-    def set_gps(self, lat, long, elev):
-        """Update GPS data
-        :type lat: float
-        :type long: float
-        :type elev: float
-        """
-        self.latitude = lat
-        self.longitude = long
-        self.elevation = elev
-
-    def csv_output(self):
-        """:return string for csv file"""
-        osm_link = osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
-        s = '%s,%s,%f,%f,"%s","%s"' % (self.filename,
-                                       self.timestamp.strftime('%d:%m:%Y %H:%M:%S'),
-                                       self.latitude,
-                                       self.longitude,
-                                       osm_link,
-                                       get_locality(self.latitude, self.longitude))
-        print(s)
-        s += '\n'
-        return s
-
-
-def get_locality(latitude, longitude):
-    """Get location details from co-ordinates, using Open Street Map.
-    """
-    osm_request = "https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&zoom=20&format=json"
-    result = subprocess.check_output(['curl', '-s', osm_request % (latitude, longitude)]).decode("utf-8")
-    result_json = json.loads(result)
-
-    # Return full address for location ('display_name')
-    return result_json['display_name']
 
 
 def match_locations(gpx_xml, photo_data):
