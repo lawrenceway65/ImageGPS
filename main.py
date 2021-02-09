@@ -25,7 +25,7 @@ else:
     path = '/Users/lawrence/Pictures/Photos/2021/2021_Test_AddlestoneMorningWalk'
 
 # Time correction to apply to photo time
-correction_seconds = 48
+correction_seconds = 0
 correction = timedelta(0, correction_seconds)
 
 # Controls if metadata should be updated
@@ -95,11 +95,51 @@ def create_gps_dict(lat, long, elevation):
 # End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
 
 
+class PhotoMetadata:
+    def __init__(self, filename, timestamp, latitude=0.0, longitude=0.0, elevation=0.0):
+        """Add new record. Initially just filename and timestamp
+        :type filename: str
+        :type timestamp: datetime
+        """
+#        print('Add %s' % filename)
+        self.filename = filename
+        self.timestamp = timestamp
+        self.latitude = latitude
+        self.longitude = longitude
+        self.elevation = elevation
+
+    def __lt__(self, other):
+        """Default sort is by timestamp"""
+        return self.timestamp < other.timestamp
+
+    def set_gps(self, lat, long, elev):
+        """Update GPS data
+        :type lat: float
+        :type long: float
+        :type elev: float
+        """
+        self.latitude = lat
+        self.longitude = long
+        self.elevation = elev
+
+    def csv_output(self):
+        """:return string for csv file"""
+        osm_link = osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
+        s = '%s,%s,%f,%f,"%s","%s"' % (self.filename,
+                                       self.timestamp.strftime('%d:%m:%Y %H:%M:%S'),
+                                       self.latitude,
+                                       self.longitude,
+                                       osm_link,
+                                       get_locality(self.latitude, self.longitude))
+        print(s)
+        s += '\n'
+        return s
+
+
 def get_locality(latitude, longitude):
-    """Get location from co-ordinates, using Open Street Map.
+    """Get location details from co-ordinates, using Open Street Map.
     """
     osm_request = "https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&zoom=20&format=json"
-    #   print(OSMRequest % (Latitude, Longitude))
     result = subprocess.check_output(['curl', '-s', osm_request % (latitude, longitude)]).decode("utf-8")
     result_json = json.loads(result)
 
@@ -107,15 +147,15 @@ def get_locality(latitude, longitude):
     return result_json['display_name']
 
 
-def match_locations(gpx_xml, photos):
+def match_locations(gpx_xml, photo_data):
     """For each photo record, find the co-ordinates for the matching time from the gpx data
     If a correction is set apply it to the photo time (for when camera time was set wrong).
     :param gpx_xml: gpx data
     :type gpx_xml: xml
+    :type photo_data: PhotoMetadata[]
     """
     # Variables
     photo_count = 0
-    output_data = 'Photo,Date/Time,Lat,Long,Link,Location\n'
 
     # Parse to gpx and iterate through
     input_gpx = gpxpy.parse(gpx_xml)
@@ -124,39 +164,23 @@ def match_locations(gpx_xml, photos):
             for point in segment.points:
                 point_time = time.localtime(point.time.timestamp())
                 # Apply correction
-                corrected_photo_time = photos[photo_count][0] + correction
-                photo_time = time.localtime(corrected_photo_time.timestamp())
+                photo_data[photo_count].timestamp += correction
+                photo_time = time.localtime(photo_data[photo_count].timestamp.timestamp())
                 # May be many photos at one point
-                while point_time > photo_time and photo_count < len(photos):
-                    osm_link = osm_location_format % (point.latitude, point.longitude, point.latitude, point.longitude)
-                    s = '%s,%s,%f,%f,"%s","%s"' % (photos[photo_count][1],
-                                                   corrected_photo_time.strftime('%d:%m:%Y %H:%M:%S'),
-                                                   point.latitude,
-                                                   point.longitude,
-                                                   # 'osm_link',
-                                                   # 'get_locality(point.latitude, point.longitude)')
-                                                   osm_link,
-                                                   get_locality(point.latitude, point.longitude))
-                    print(s)
-                    output_data += s
-                    output_data += '\n'
-
-                    # Update lat long
-                    photos[photo_count][2] = point.latitude
-                    photos[photo_count][3] = point.longitude
-                    photos[photo_count][4] = point.elevation
+                while point_time > photo_time and photo_count < len(photo_data):
+                    photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
 
                     # Next one
                     photo_count += 1
-                    if photo_count >= len(photos):
+                    if photo_count >= len(photo_data):
                         break
-                    corrected_photo_time = photos[photo_count][0] + correction
-                    photo_time = time.localtime(corrected_photo_time.timestamp())
+                    photo_data[photo_count].timestamp += correction
+                    photo_time = time.localtime(photo_data[photo_count].timestamp.timestamp())
 
-                if photo_count >= len(photos):
+                if photo_count >= len(photo_data):
                     break
 
-    print('%s matched out of %s' % (photo_count, len(photos)))
+    print('%s matched out of %s' % (photo_count, len(photo_data)))
     # Log correction used and result
     with open(path + '/location.txt', 'w') as logfile:
         logfile.write('%s\nPath = %s\nCorrection = %d sec\n%d matched out of %d' %
@@ -164,35 +188,34 @@ def match_locations(gpx_xml, photos):
                        path,
                        correction_seconds,
                        photo_count,
-                       len(photos)))
+                       len(photo_data)))
 
-    return output_data
+    return
 
 
 def get_exif_data():
 
     # Build list photos with date taken from exif metadata
-    list = []
+    photo_data = []
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
             photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
-            rec = [datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"), os.path.basename(entry.path), 0.0, 0.0, 0.0]
-            list.append(rec)
+            rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
+            photo_data.append(rec)
     # Sort list by date/time
-    list.sort()
+    photo_data.sort()
 
-    # Build csv file with location matching photo time
+    # match photo location matching photo time and write results to csv
     for entry in os.scandir(path):
         if (entry.path.endswith(".gpx")):
             with open(entry.path, 'r') as file:
                 gpx_data = file.read()
-            csv_data = match_locations(gpx_data, list)
+            match_locations(gpx_data, photo_data)
             with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
-                csv_file.write(csv_data)
-
-    # for item in list:
-    #     print(item)
+                csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
+                for record in photo_data:
+                    csv_file.write(record.csv_output())
 
     # If required, make the correction
     if update_exif:
@@ -212,9 +235,9 @@ def get_exif_data():
                 exif_dict['Exif'][DateTimeDigitized] = corrected_digitization_time.strftime("%Y:%m:%d %H:%M:%S").encode()
 
                 # Find the photo in the list
-                for record in list:
-                    if record[1] == os.path.basename(entry.path):
-                        gps_dict = create_gps_dict(record[2], record[3], record[4])
+                for record in photo_data:
+                    if record.filename == os.path.basename(entry.path):
+                        gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
                         break
 
                 exif_dict.update(gps_dict)
