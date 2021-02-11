@@ -20,10 +20,11 @@ DateTimeDigitized = 36868
 if os.name == 'nt':
     path = "D:\\Pictures\\2021\\2021_Test_AddlestoneMorningWalk"
 else:
-    path = '/Users/lawrence/Pictures/Photos/2021/2021_Test_AddlestoneMorningWalk'
+    path = '/Users/lawrence/Pictures/Photos/2021/2021_01_HamptontoKingston'
 
 # Time correction to apply to photo time
-correction_seconds = 0
+correction_seconds = -4562
+# correction_seconds = 0
 correction = timedelta(0, correction_seconds)
 
 # Controls if metadata should be updated
@@ -51,17 +52,17 @@ def match_locations(gpx_xml, photo_data):
             for point in segment.points:
                 point_time = time.localtime(point.time.timestamp())
                 # Apply correction
-                photo_data[photo_count].timestamp += correction
-                photo_time = time.localtime(photo_data[photo_count].timestamp.timestamp())
+                corrected_time = photo_data[photo_count].timestamp + correction
+                photo_time = time.localtime(corrected_time.timestamp())
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photo_data):
+                    print('Point: %s Photo(orig): %s Photo(corr): %s' % (point.time, photo_data[photo_count].timestamp, corrected_time))
+                    photo_data[photo_count].timestamp = corrected_time
                     photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
-
                     # Next one
                     photo_count += 1
                     if photo_count >= len(photo_data):
                         break
-                    photo_data[photo_count].timestamp += correction
                     photo_time = time.localtime(photo_data[photo_count].timestamp.timestamp())
 
                 if photo_count >= len(photo_data):

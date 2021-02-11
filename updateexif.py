@@ -107,7 +107,6 @@ def update_exif():
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
             original_time = exif_dict['Exif'][DateTimeOriginal].decode()
-#            corrected_digitization_time = datetime.strptime(exif_dict['Exif'][DateTimeDigitized].decode(), "%Y:%m:%d %H:%M:%S") + correction
 
             # Find the photo in the list
             for record in photos:

@@ -19,6 +19,7 @@ class PhotoMetadata:
         self.latitude = latitude
         self.longitude = longitude
         self.elevation = elevation
+        self.point_found = False
 
     def __lt__(self, other):
         """Default sort is by timestamp"""
@@ -33,16 +34,22 @@ class PhotoMetadata:
         self.latitude = lat
         self.longitude = long
         self.elevation = elev
+        self.point_found = True
 
     def csv_output(self):
         """:return string for csv file"""
-        osm_link = osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
+        if self.point_found:
+            osm_link = osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
+            address = get_locality(self.latitude, self.longitude)
+        else:
+            osm_link = 'n/a'
+            address = 'not found'
         s = '%s,%s,%f,%f,"%s","%s"' % (self.filename,
                                        self.timestamp.strftime('%d:%m:%Y %H:%M:%S'),
                                        self.latitude,
                                        self.longitude,
                                        osm_link,
-                                       get_locality(self.latitude, self.longitude))
+                                       address)
         print(s)
         s += '\n'
         return s

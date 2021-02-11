@@ -13,7 +13,11 @@ import subprocess
 import json
 
 
-path = "D:\\Pictures\\2021\\2021_06_ChertseyMeads"
+if os.name == 'nt':
+    path = "D:\\Pictures\\2021\\2021_Test_AddlestoneMorningWalk"
+else:
+    path = '/Users/lawrence/Pictures/Photos/2021/2021_01_HamptontoKingston'
+
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
 
 
@@ -57,9 +61,9 @@ def get_difference(gpx_xml, photo_time, lat, long):
 
 def calculate_correction():
 
-    photo = '20210123-IMG_6815.jpg'
-    lat = 51.387248
-    long = -0.480365
+    photo = 'IMG_6642.jpg'
+    lat = 51.400984
+    long = -0.34279
 
     # Get time photo taken from exif
     image = Image.open(path + '/' + photo)
