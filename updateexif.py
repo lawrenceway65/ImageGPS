@@ -17,11 +17,11 @@ DateTimeDigitized = 36868
 if os.name == 'nt':
     path = "D:\\Pictures\\2021\\2021_Test_AddlestoneMorningWalk"
 else:
-    path = '/Users/lawrence/Pictures/Photos/2021/2021_Test_AddlestoneMorningWalk'
+    path = '/Users/lawrence/Pictures/Photos/2021/2021_01_HamptontoKingston'
 
 # Time correction to apply to photo time
-correction_seconds = 0
-correction = timedelta(0, correction_seconds)
+# correction_seconds = 0
+# correction = timedelta(0, correction_seconds)
 
 
 """ Next three functions from 
