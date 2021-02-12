@@ -18,23 +18,19 @@ DateTimeDigitized = 36868
 
 # System specific path
 if os.name == 'nt':
-    path = "D:\\Pictures\\2021\\2021_Test_AddlestoneMorningWalk"
+    hardcoded_path = "D:\\Pictures\\2021\\2021_Test_AddlestoneMorningWalk"
 else:
-    path = '/Users/lawrence/Pictures/Photos/2021/2021_01_HamptontoKingston'
+    hardcoded_path = '/Users/lawrence/Pictures/Photos/2021/2021_01_HamptontoKingston'
 
 # Time correction to apply to photo time
 correction_seconds = 0
 correction = timedelta(0, correction_seconds)
 
-# Controls if metadata should be updated
-update_exif = True
-
-# path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
 
 
 
-def match_locations(gpx_xml, photo_data):
+def match_locations(gpx_xml, photo_data, path):
     """For each photo record, find the co-ordinates for the matching time from the gpx data
     If a correction is set apply it to the photo time (for when camera time was set wrong).
     :param gpx_xml: gpx data
@@ -56,7 +52,7 @@ def match_locations(gpx_xml, photo_data):
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photo_data):
                     # Found a match so update
-                    print('Point: %s Photo(orig): %s Photo(corr): %s' % (point.time, photo_data[photo_count].timestamp, corrected_time))
+#                    print('Point: %s Photo(orig): %s Photo(corr): %s' % (point.time, photo_data[photo_count].timestamp, corrected_time))
                     photo_data[photo_count].timestamp = corrected_time
                     photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
                     # Next one
@@ -81,9 +77,11 @@ def match_locations(gpx_xml, photo_data):
     return
 
 
-def get_exif_data():
-
-    # Build list photos with date taken from exif metadata
+def get_photo_data(path):
+    """Build list photos with date taken from exif metadata
+    Match photos to gpx track based on time and build list
+    :param path: folder to analyse
+    """
     photo_data = []
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
@@ -99,7 +97,7 @@ def get_exif_data():
         if (entry.path.endswith(".gpx")):
             with open(entry.path, 'r') as file:
                 gpx_data = file.read()
-            match_locations(gpx_data, photo_data)
+            match_locations(gpx_data, photo_data, path)
             with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
                 csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
                 for record in photo_data:
@@ -108,5 +106,5 @@ def get_exif_data():
 
 
 if __name__ == '__main__':
-    get_exif_data()
+    get_photo_data(hardcoded_path)
 
