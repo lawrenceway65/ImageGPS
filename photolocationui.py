@@ -19,7 +19,7 @@ import matchlocations
 
 sg.theme('SystemDefault1')  # please make your creations colorful
 
-layout = [  [sg.Text('Photo Location - Select Folder')],
+layout = [[sg.Text('Photo Location - Select Folder')],
             [sg.Input(), sg.FolderBrowse()],
             [sg.OK(), sg.Cancel()]]
 
