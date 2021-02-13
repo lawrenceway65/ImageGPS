@@ -74,15 +74,14 @@ def match_locations(gpx_xml, photo_data, path):
                        photo_count,
                        len(photo_data)))
 
-    return photo_count
 
-
-def get_photo_data(path):
+def get_photo_data(path, photo_data):
     """Build list photos with date taken from exif metadata
     Match photos to gpx track based on time and build list
+    :type path: str
+    :type photo_data list
     :param path: folder to analyse
     """
-    photo_data = []
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
@@ -103,8 +102,10 @@ def get_photo_data(path):
                 for record in photo_data:
                     csv_file.write(record.csv_output())
 
+    return len(photo_data)
 
 
 if __name__ == '__main__':
-    get_photo_data(hardcoded_path)
+    photo_data = []
+    get_photo_data(hardcoded_path, photo_data)
 
