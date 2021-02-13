@@ -19,18 +19,23 @@ import matchlocations
 
 sg.theme('SystemDefault1')  # please make your creations colorful
 
-layout = [[sg.Text('Photo Location - Select Folder')],
+select_folder_layout = [[sg.Text('Photo Location - Select Folder')],
             [sg.Input(), sg.FolderBrowse()],
             [sg.OK(), sg.Cancel()]]
 
-window = sg.Window('Select folder to analyse', layout)
+window = sg.Window('Select folder to analyse', select_folder_layout)
 
 while True:
     event, values = window.read()
     window.close()
     if event == 'OK':
         path = values[0]
-        matchlocations.get_photo_data(path)
+        count = matchlocations.get_photo_data(path)
+        sg.popup_ok('Photo Location analysis complete')
+
+        # Save path
+        with open('config.txt', 'w') as config_file:
+            config_file.write(path)
 
     break
 

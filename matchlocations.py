@@ -74,7 +74,7 @@ def match_locations(gpx_xml, photo_data, path):
                        photo_count,
                        len(photo_data)))
 
-    return
+    return photo_count
 
 
 def get_photo_data(path):
