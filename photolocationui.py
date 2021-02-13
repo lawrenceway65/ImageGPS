@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 import matchlocations
+from photmetadata import PhotoMetadata
 
 # # All the stuff inside your window.
 # layout = [  [sg.Text('Some text on Row 1')],
@@ -33,13 +34,35 @@ def get_folder():
     else:
         return ''
 
+def get_set_data(photo_data):
+    """Get data pertaining to set of photos. Return as dictionary
+    :type photo_data: list of PhotoMetaData
+    """
+    matched_photos_count = 0
+    for item in photo_data:
+        if item.point_found:
+            matched_photos_count += 1
+
+    first_photo = photo_data[0].timestamp
+    last_photo = photo_data[len(photo_data)-1].timestamp
+
+    set_data = {'photo_count': len(photo_data),
+                'matched_count': matched_photos_count,
+                'first_photo': first_photo,
+                'last_photo': last_photo,
+                'first_gps': 0,
+                'last_gps': 0}
+
+    return set_data
+
 
 while True:
     photo_data = []
     path = get_folder()
     if not path == '':
         matchlocations.get_photo_data(path, photo_data)
-        sg.popup_ok('Photo Location analysis complete, %d photos checked.' % len(photo_data))
+        set_data = get_set_data(photo_data)
+        sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
 
     break
 
