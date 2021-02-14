@@ -58,10 +58,15 @@ def get_set_data(photo_data):
 
 # Main window definition
 layout = [
-    [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='right'), sg.Text('folder not selected', key='__PHOTO_FOLDER__'), sg.Btn('Select', key='__SOURCE_FOLDER__')],
+    [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
+     sg.Text('folder not selected', key='__SOURCE_FOLDER__'),
+     sg.Btn('Select', key='__SELECT_SOURCE_FOLDER__')],
     [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='right'), sg.Text('gpx file not selected', key='__GPX_FILE__'), sg.Btn('Select', key='__GPX_FILE__')],
-    [sg.Frame('Data', layout=[[sg.Text('Photos:'), sg.Text('First Photo:'), sg.Text('Last Photo:')],
-                              [sg.Text('Matched Photos:'), sg.Text('GPX Start:'), sg.Text('GPX End:')]])],
+    [sg.Frame('Data', layout=[[sg.Text('Photos:'), sg.Text('', key='__PHOTOS__'),
+                               sg.Text('First Photo:'), sg.Text('', key='__FIRST_PHOTO__'),
+                               sg.Text('Last Photo:'), sg.Text('', key='__LAST_PHOTO__')],
+                              [sg.Text('Matched Photos:'), sg.Text('', key='__MATCHED__'),
+                               sg.Text('GPX Start:'), sg.Text('GPX End:')]])],
     [sg.Btn('Exit', key='__EXIT__')]
 ]
 window = sg.Window('Match Locations', layout)
@@ -78,13 +83,17 @@ while True:
     if event == '__EXIT__':
         break
 
-    if event == '__SOURCE_FOLDER__':
+    if event == '__SELECT_SOURCE_FOLDER__':
         path = get_folder()
         if not path == '':
             matchlocations.get_photo_data(path, photo_data)
             set_data = get_set_data(photo_data)
             sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
 
+        # Update info
+#        window['__SOURCE_FOLDER__'].set_size((len(path), 1))
+        window['__SOURCE_FOLDER__'].update(path)
+        window['__PHOTOS__'].update('%d' % set_data['photo_count'])
 
 
 window.close()
