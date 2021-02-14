@@ -1,24 +1,15 @@
 import PySimpleGUI as sg
 import matchlocations
+import re
+import os
+import gpxpy
+import gpxpy.gpx
+from datetime import datetime
+
 from photmetadata import PhotoMetadata
 
-# # All the stuff inside your window.
-# layout = [  [sg.Text('Some text on Row 1')],
-#             [sg.Text('Enter something on Row 2'), sg.InputText()],
-#             [sg.Button('Ok'), sg.Button('Cancel')] ]
-#
-# # Create the Window
-# window = sg.Window('Window Title', layout)
-# # Event Loop to process "events" and get the "values" of the inputs
-# while True:
-#     event, values = window.read()
-#     if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
-#         break
-#     print('You entered ', values[0])
-#
-# window.close()
 
-sg.theme('SystemDefault1')  # please make your creations colorful
+sg.theme('SystemDefault1')
 
 def get_folder():
     layout = [[sg.Text('Photo Location - Select Folder')],
@@ -55,19 +46,47 @@ def get_set_data(photo_data):
 
     return set_data
 
+def check_gpx(path):
+    # Check for GPX file
+    for entry in os.scandir(path):
+        if (entry.path.endswith(".gpx")):
+            return entry.path
+        else:
+            return ''
+
+
+def get_gpx_data(gpx_file, set_data):
+    """Set first and last gpx point"""
+    with open(gpx_file, 'r') as file:
+        gpx_data = file.read()
+        input_gpx = gpxpy.parse(gpx_data)
+        for track in input_gpx.tracks:
+            for segment in track.segments:
+                for point in segment.points:
+                    if set_data['first_gps'] == 0:
+                        # Set first point
+                        set_data['first_gps'] = point.time
+            # Set last point
+            set_data['last_gps'] = point.time
+
+    return
+
 
 # Main window definition
 layout = [
     [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('folder not selected', key='__SOURCE_FOLDER__'),
-     sg.Btn('Select', key='__SELECT_SOURCE_FOLDER__')],
-    [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='right'), sg.Text('gpx file not selected', key='__GPX_FILE__'), sg.Btn('Select', key='__GPX_FILE__')],
-    [sg.Frame('Data', layout=[[sg.Text('Photos:'), sg.Text('', key='__PHOTOS__'),
-                               sg.Text('First Photo:'), sg.Text('', key='__FIRST_PHOTO__'),
-                               sg.Text('Last Photo:'), sg.Text('', key='__LAST_PHOTO__')],
-                              [sg.Text('Matched Photos:'), sg.Text('', key='__MATCHED__'),
-                               sg.Text('GPX Start:'), sg.Text('GPX End:')]])],
-    [sg.Btn('Exit', key='__EXIT__')]
+     sg.Text('folder not selected', size=(30, 1), key='-SOURCE_FOLDER-'),
+     sg.Btn('Select', key='-SELECT_SOURCE_FOLDER-')],
+    [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
+     sg.Text('gpx file not selected', size=(30, 1), key='-GPX_FILE-'),
+     sg.Btn('Select', key='-SELECT_GPX_FILE-')],
+    [sg.Frame('Data', layout=[[sg.Text('Photos:', size=(20, 1)), sg.Text('', size=(3, 1), key='-PHOTOS-'),
+                               sg.Text('First Photo:', size=(20, 1)), sg.Text('', size=(20, 1), key='-FIRST_PHOTO-'),
+                               sg.Text('Last Photo:', size=(20, 1)), sg.Text('', size=(20, 1), key='-LAST_PHOTO-')],
+                              [sg.Text('Matched Photos:', size=(20, 1)), sg.Text('', size=(3, 1), key='-MATCHED-'),
+                               sg.Text('GPX Start:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_START-'),
+                               sg.Text('GPX End:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_END-')]])],
+    [sg.Btn('Exit', key='-EXIT-')]
 ]
 window = sg.Window('Match Locations', layout)
 
@@ -80,20 +99,38 @@ while True:
     print(event)
 #    print(values[0])
 
-    if event == '__EXIT__':
+    if event == '-EXIT-':
         break
 
-    if event == '__SELECT_SOURCE_FOLDER__':
+    if event == '-SELECT_SOURCE_FOLDER-':
         path = get_folder()
-        if not path == '':
-            matchlocations.get_photo_data(path, photo_data)
-            set_data = get_set_data(photo_data)
-            sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
+        if path == '':
+            break
 
-        # Update info
-#        window['__SOURCE_FOLDER__'].set_size((len(path), 1))
-        window['__SOURCE_FOLDER__'].update(path)
-        window['__PHOTOS__'].update('%d' % set_data['photo_count'])
+        matchlocations.get_photo_data(path, photo_data)
+        set_data = get_set_data(photo_data)
+        sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
+
+        # Get gpx data
+        gpx_file = check_gpx(path)
+        if not gpx_file == '':
+            get_gpx_data(gpx_file, set_data)
+
+        # Get folder name from path
+        path_list = re.split('/', path)
+        dir_name = path_list[len(path_list)-1]
+
+        # Update window info
+        window['-SOURCE_FOLDER-'].update(dir_name)
+        window['-GPX_FILE-'].update(gpx_file)
+        window['-PHOTOS-'].update('%d' % set_data['photo_count'])
+        window['-MATCHED-'].update('%d' % set_data['matched_count'])
+        window['-FIRST_PHOTO-'].update(set_data['first_photo'].strftime('%d:%m:%Y %H:%M:%S'))
+        window['-LAST_PHOTO-'].update(set_data['last_photo'].strftime('%d:%m:%Y %H:%M:%S'))
+        window['-GPX_START-'].update(set_data['first_gps'].strftime('%d:%m:%Y %H:%M:%S'))
+        window['-GPX_END-'].update(set_data['last_gps'].strftime('%d:%m:%Y %H:%M:%S'))
+
+
 
 
 window.close()
