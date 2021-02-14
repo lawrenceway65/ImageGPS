@@ -48,9 +48,7 @@ def get_set_data(photo_data):
 
 def check_gpx(path):
     # Check for GPX file
-    print(path)
     for entry in os.scandir(path):
-        print(entry.path)
         if (entry.path.endswith(".gpx")):
             return entry.path
     # Not found
@@ -119,8 +117,6 @@ while True:
 
         # Get gpx data
         gpx_filespec = check_gpx(path)
-        print(path)
-        print(gpx_filespec)
         if not gpx_filespec == '':
             get_gpx_data(gpx_filespec, set_data)
             path_list = re.split('/', gpx_filespec)
