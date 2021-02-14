@@ -56,13 +56,32 @@ def get_set_data(photo_data):
     return set_data
 
 
+# Main window definition
+layout = [
+    [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='right'), sg.Text('folder not selected', key='__PHOTO_FOLDER__'), sg.FolderBrowse()],
+    [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='right'), sg.Text('gpx file not selected', key='__GPX_FILE__'), sg.FileBrowse()],
+    [sg.Frame('Data', layout=[[sg.Text('Photos:'), sg.Text('First Photo:'), sg.Text('Last Photo:')],
+                              [sg.Text('Matched Photos:'), sg.Text('GPX Start:'), sg.Text('GPX End:')]])],
+    [sg.Btn('Exit', key='__EXIT__')]
+]
+window = sg.Window('Match Locations', layout)
 while True:
-    photo_data = []
-    path = get_folder()
-    if not path == '':
-        matchlocations.get_photo_data(path, photo_data)
-        set_data = get_set_data(photo_data)
-        sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
+    event, values = window.read()
+    print(event)
+#    print(values[0])
 
-    break
+    if event == '__EXIT__':
+        break
+
+window.close()
+
+# while True:
+#     photo_data = []
+#     path = get_folder()
+#     if not path == '':
+#         matchlocations.get_photo_data(path, photo_data)
+#         set_data = get_set_data(photo_data)
+#         sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
+#
+#     break
 
