@@ -48,11 +48,13 @@ def get_set_data(photo_data):
 
 def check_gpx(path):
     # Check for GPX file
+    print(path)
     for entry in os.scandir(path):
+        print(entry.path)
         if (entry.path.endswith(".gpx")):
             return entry.path
-        else:
-            return ''
+    # Not found
+    return ''
 
 
 def get_gpx_data(gpx_file, set_data):
@@ -75,10 +77,10 @@ def get_gpx_data(gpx_file, set_data):
 # Main window definition
 layout = [
     [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('folder not selected', size=(30, 1), key='-SOURCE_FOLDER-'),
+     sg.Text('folder not selected', size=(60, 1), key='-SOURCE_FOLDER-'),
      sg.Btn('Select', key='-SELECT_SOURCE_FOLDER-')],
     [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('gpx file not selected', size=(30, 1), key='-GPX_FILE-'),
+     sg.Text('gpx file not selected', size=(60, 1), key='-GPX_FILE-'),
      sg.Btn('Select', key='-SELECT_GPX_FILE-')],
     [sg.Frame('Data', layout=[[sg.Text('Photos:', size=(20, 1)), sg.Text('', size=(3, 1), key='-PHOTOS-'),
                                sg.Text('First Photo:', size=(20, 1)), sg.Text('', size=(20, 1), key='-FIRST_PHOTO-'),
@@ -107,14 +109,22 @@ while True:
         if path == '':
             break
 
+        # Remove items from list in case it is second time around
+        for item in photo_data:
+            del item
+
         matchlocations.get_photo_data(path, photo_data)
         set_data = get_set_data(photo_data)
         sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
 
         # Get gpx data
-        gpx_file = check_gpx(path)
-        if not gpx_file == '':
-            get_gpx_data(gpx_file, set_data)
+        gpx_filespec = check_gpx(path)
+        print(path)
+        print(gpx_filespec)
+        if not gpx_filespec == '':
+            get_gpx_data(gpx_filespec, set_data)
+            path_list = re.split('/', gpx_filespec)
+            gpx_file = path_list[len(path_list)-1]
 
         # Get folder name from path
         path_list = re.split('/', path)
