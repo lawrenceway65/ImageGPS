@@ -35,7 +35,7 @@ def get_folder():
 
 def get_file():
     """Dialog to get gpx file, if not in selected folder.
-    :return str filespec
+    :return str file name / path
     """
     layout = [[sg.Text('GPX File - Select File')],
             [sg.Input(), sg.FileBrowse(file_types=(("GPX files","*.gpx")))],
@@ -103,7 +103,6 @@ def analyse_folder():
 
     # Remove items from list in case it is second time around
     photo_data.clear()
-    print(len(photo_data))
 
     matchlocations.get_photo_data(path, photo_data)
     set_data = get_set_data(photo_data)
@@ -112,16 +111,8 @@ def analyse_folder():
 
     # Get gpx data
     get_gpx_data(gpx_filespec, set_data)
-    path_list = re.split('/', gpx_filespec)
-    gpx_file = path_list[len(path_list) - 1]
-
-    # Get folder name from path
-    path_list = re.split('/', path)
-    dir_name = path_list[len(path_list) - 1]
 
     # Update window info
-#    window['-SOURCE_FOLDER-'].update(dir_name)
-    window['-GPX_FILE-'].update(gpx_file)
     window['-PHOTOS-'].update('%d' % set_data['photo_count'])
     window['-MATCHED-'].update('%d' % set_data['matched_count'])
     window['-FIRST_PHOTO-'].update(set_data['first_photo'].strftime('%d:%m:%Y %H:%M:%S'))
@@ -162,11 +153,9 @@ while True:
     if event == '-SELECT_SOURCE_FOLDER-':
         path = get_folder()
         if not path == '':
-            # Get folder name from path
+            # Get folder name from path and update window info
             path_list = re.split('/', path)
             dir_name = path_list[len(path_list) - 1]
-
-            # Update window info
             window['-SOURCE_FOLDER-'].update(dir_name)
 
             # Is there a gpx file
@@ -177,6 +166,10 @@ while True:
     if event == '-SELECT_GPX_FILE-':
         gpx_filespec = get_file()
         if not gpx_filespec == '':
+            # Get filename from path and update iwndow info
+            path_list = re.split('/', gpx_filespec)
+            gpx_file = path_list[len(path_list) - 1]
+            window['-GPX_FILE-'].update(gpx_file)
             # Has a path already been selected
             if not path == '':
                 analyse_folder()
