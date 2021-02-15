@@ -5,13 +5,20 @@ import os
 import gpxpy
 import gpxpy.gpx
 from datetime import datetime
-
 from photmetadata import PhotoMetadata
 
 
-sg.theme('SystemDefault1')
+# Key data is global
+path = ''
+gpx_filespec = ''
+set_data = None
+photo_data = []
+
 
 def get_folder():
+    """Dialog to get folder to analyse.
+    :return str path
+    """
     layout = [[sg.Text('Photo Location - Select Folder')],
             [sg.Input(), sg.FolderBrowse()],
             [sg.OK(), sg.Cancel()]]
@@ -24,6 +31,25 @@ def get_folder():
         return values[0]
     else:
         return ''
+
+
+def get_file():
+    """Dialog to get gpx file, if not in selected folder.
+    :return str filespec
+    """
+    layout = [[sg.Text('GPX File - Select File')],
+            [sg.Input(), sg.FileBrowse(file_types=(("GPX files","*.gpx")))],
+            [sg.OK(), sg.Cancel()]]
+
+    window = sg.Window('Select track file', layout)
+
+    event, values = window.read()
+    window.close()
+    if event == 'OK':
+        return values[0]
+    else:
+        return ''
+
 
 def get_set_data(photo_data):
     """Get data pertaining to set of photos. Return as dictionary
@@ -45,6 +71,7 @@ def get_set_data(photo_data):
                 'last_gps': 0}
 
     return set_data
+
 
 def check_gpx(path):
     # Check for GPX file
@@ -72,7 +99,41 @@ def get_gpx_data(gpx_file, set_data):
     return
 
 
+def analyse_folder():
+
+    # Remove items from list in case it is second time around
+    photo_data.clear()
+    print(len(photo_data))
+
+    matchlocations.get_photo_data(path, photo_data)
+    set_data = get_set_data(photo_data)
+    sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (
+    set_data['photo_count'], set_data['matched_count']))
+
+    # Get gpx data
+    get_gpx_data(gpx_filespec, set_data)
+    path_list = re.split('/', gpx_filespec)
+    gpx_file = path_list[len(path_list) - 1]
+
+    # Get folder name from path
+    path_list = re.split('/', path)
+    dir_name = path_list[len(path_list) - 1]
+
+    # Update window info
+#    window['-SOURCE_FOLDER-'].update(dir_name)
+    window['-GPX_FILE-'].update(gpx_file)
+    window['-PHOTOS-'].update('%d' % set_data['photo_count'])
+    window['-MATCHED-'].update('%d' % set_data['matched_count'])
+    window['-FIRST_PHOTO-'].update(set_data['first_photo'].strftime('%d:%m:%Y %H:%M:%S'))
+    window['-LAST_PHOTO-'].update(set_data['last_photo'].strftime('%d:%m:%Y %H:%M:%S'))
+    window['-GPX_START-'].update(set_data['first_gps'].strftime('%d:%m:%Y %H:%M:%S'))
+    window['-GPX_END-'].update(set_data['last_gps'].strftime('%d:%m:%Y %H:%M:%S'))
+
+    return
+
+
 # Main window definition
+sg.theme('SystemDefault1')
 layout = [
     [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
      sg.Text('folder not selected', size=(60, 1), key='-SOURCE_FOLDER-'),
@@ -90,54 +151,35 @@ layout = [
 ]
 window = sg.Window('Match Locations', layout)
 
-# Key params
-path = None
-photo_data = []
 
 while True:
     event, values = window.read()
     print(event)
-#    print(values[0])
 
-    if event == '-EXIT-':
+    if event == '-EXIT-' or event == sg.WINDOW_CLOSED:
         break
 
     if event == '-SELECT_SOURCE_FOLDER-':
         path = get_folder()
-        if path == '':
-            break
+        if not path == '':
+            # Get folder name from path
+            path_list = re.split('/', path)
+            dir_name = path_list[len(path_list) - 1]
 
-        # Remove items from list in case it is second time around
-        for item in photo_data:
-            del item
+            # Update window info
+            window['-SOURCE_FOLDER-'].update(dir_name)
 
-        matchlocations.get_photo_data(path, photo_data)
-        set_data = get_set_data(photo_data)
-        sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
+            # Is there a gpx file
+            gpx_filespec = check_gpx(path)
+            if not gpx_filespec == '':
+                analyse_folder()
 
-        # Get gpx data
-        gpx_filespec = check_gpx(path)
+    if event == '-SELECT_GPX_FILE-':
+        gpx_filespec = get_file()
         if not gpx_filespec == '':
-            get_gpx_data(gpx_filespec, set_data)
-            path_list = re.split('/', gpx_filespec)
-            gpx_file = path_list[len(path_list)-1]
-
-        # Get folder name from path
-        path_list = re.split('/', path)
-        dir_name = path_list[len(path_list)-1]
-
-        # Update window info
-        window['-SOURCE_FOLDER-'].update(dir_name)
-        window['-GPX_FILE-'].update(gpx_file)
-        window['-PHOTOS-'].update('%d' % set_data['photo_count'])
-        window['-MATCHED-'].update('%d' % set_data['matched_count'])
-        window['-FIRST_PHOTO-'].update(set_data['first_photo'].strftime('%d:%m:%Y %H:%M:%S'))
-        window['-LAST_PHOTO-'].update(set_data['last_photo'].strftime('%d:%m:%Y %H:%M:%S'))
-        window['-GPX_START-'].update(set_data['first_gps'].strftime('%d:%m:%Y %H:%M:%S'))
-        window['-GPX_END-'].update(set_data['last_gps'].strftime('%d:%m:%Y %H:%M:%S'))
-
-
-
+            # Has a path already been selected
+            if not path == '':
+                analyse_folder()
 
 window.close()
 
