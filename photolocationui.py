@@ -111,6 +111,10 @@ def analyse_folder():
 
     # Get gpx data
     get_gpx_data(gpx_filespec, set_data)
+    # Get filename from path and update window info
+    path_list = re.split('/', gpx_filespec)
+    gpx_file = path_list[len(path_list) - 1]
+    window['-GPX_FILE-'].update(gpx_file)
 
     # Update window info
     window['-PHOTOS-'].update('%d' % set_data['photo_count'])
