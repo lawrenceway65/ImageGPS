@@ -75,13 +75,14 @@ def match_locations(gpx_xml, photo_data, path):
                        len(photo_data)))
 
 
-def get_photo_data(path, photo_data):
+def get_photo_data(path, photo_data, gpx_file=''):
     """Build list photos with date taken from exif metadata
     Match photos to gpx track based on time and build list
     :type path: str
-    :type photo_data list
-    :param path: folder to analyse
+    :type photo_data: list of PhotoMetaData
+    :type gpx_file: path to gpx file
     """
+    # Build list of photos
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
@@ -91,16 +92,21 @@ def get_photo_data(path, photo_data):
     # Sort list by date/time
     photo_data.sort()
 
-    # match photo location matching photo time and write results to csv
-    for entry in os.scandir(path):
-        if (entry.path.endswith(".gpx")):
-            with open(entry.path, 'r') as file:
-                gpx_data = file.read()
-            match_locations(gpx_data, photo_data, path)
-            with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
-                csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
-                for record in photo_data:
-                    csv_file.write(record.csv_output())
+    # If file not passed in open now.
+    if gpx_file == '':
+        for entry in os.scandir(path):
+            if (entry.path.endswith(".gpx")):
+                gpx_file = entry.path
+
+    with open(gpx_file, 'r') as file:
+        gpx_data = file.read()
+
+    # Match photo location matching photo time and write results to csv
+    match_locations(gpx_data, photo_data, path)
+    with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
+        csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
+        for record in photo_data:
+            csv_file.write(record.csv_output())
 
     return len(photo_data)
 

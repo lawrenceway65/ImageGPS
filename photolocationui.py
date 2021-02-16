@@ -104,7 +104,7 @@ def analyse_folder():
     # Remove items from list in case it is second time around
     photo_data.clear()
 
-    matchlocations.get_photo_data(path, photo_data)
+    matchlocations.get_photo_data(path, photo_data, gpx_filespec)
     set_data = get_set_data(photo_data)
     sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (
     set_data['photo_count'], set_data['matched_count']))
