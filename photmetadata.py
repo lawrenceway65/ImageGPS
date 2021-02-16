@@ -21,10 +21,17 @@ class PhotoMetadata:
         self.longitude = longitude
         self.elevation = elevation
         self.point_found = False
+        self.location = ''
 
     def __lt__(self, other):
         """Default sort is by timestamp"""
         return self.timestamp < other.timestamp
+
+    def get_osm_link(self):
+        if self.point_found:
+            return osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
+        else:
+            return ''
 
     def set_gps(self, lat, long, elev):
         """Update GPS data
@@ -40,8 +47,8 @@ class PhotoMetadata:
     def csv_output(self):
         """:return string for csv file"""
         if self.point_found:
-            osm_link = osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
-            address = get_locality(self.latitude, self.longitude)
+            osm_link = self.get_osm_link()
+            self.location = get_locality(self.latitude, self.longitude)
         else:
             osm_link = 'n/a'
             address = 'not found'
@@ -50,7 +57,7 @@ class PhotoMetadata:
                                        self.latitude,
                                        self.longitude,
                                        osm_link,
-                                       address)
+                                       self.location)
         sg.Print(s)
         s += '\n'
         return s

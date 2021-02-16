@@ -4,6 +4,7 @@ import re
 import os
 import gpxpy
 import gpxpy.gpx
+import webbrowser
 from datetime import datetime
 from photmetadata import PhotoMetadata
 
@@ -136,9 +137,30 @@ def analyse_folder():
 
     return
 
+def display_details(photo):
+    """
+
+    :param photo: PhotomMetadata
+    :return:
+    """
+    layout = [[sg.Text('Photo Details')],
+              [sg.Text(photo.filename)],
+              [sg.Text(photo.location)],
+              [sg.Text('Latitude:', size=(10,1)), sg.Input(photo.latitude, size=(15,1), key='-LAT-')],
+              [sg.Text('Longitude:', size=(10, 1)), sg.Input(photo.longitude, size=(15, 1), key='-LONG-')],
+              [sg.Btn('Display'), sg.Cancel()]]
+
+    window = sg.Window('Location', layout)
+
+    event, values = window.read()
+    window.close()
+    if event == 'Display':
+        webbrowser.open_new_tab(photo.get_osm_link())
+
 
 # Main window definition
 sg.theme('SystemDefault1')
+sg.SetOptions(font=('Arial', 14))
 layout = [
     [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
      sg.Text('folder not selected', size=(60, 1), key='-SOURCE_FOLDER-'),
@@ -192,7 +214,14 @@ while True:
     if event == '-PHOTOLIST-':
         selected = values['-PHOTOLIST-']
         for item in selected:
-            print(item)
+            params = re.split('\t', item)
+            img_file = params[0]
+        for item in photo_data:
+            if item.filename == img_file:
+                selected_photo = item
+                break
+        print(selected_photo.filename)
+        display_details(selected_photo)
 
 window.close()
 
