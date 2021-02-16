@@ -124,6 +124,16 @@ def analyse_folder():
     window['-GPX_START-'].update(set_data['first_gps'].strftime('%d:%m:%Y %H:%M:%S'))
     window['-GPX_END-'].update(set_data['last_gps'].strftime('%d:%m:%Y %H:%M:%S'))
 
+    # Display list of photos
+    display_list = []
+    for item in photo_data:
+        s = '%s\t%s\t%2.3f\t%2.3f' % (item.filename,
+                                       item.timestamp.strftime('%d:%m:%Y %H:%M:%S'),
+                                       item.latitude,
+                                       item.longitude)
+        display_list.append(s)
+    window['-PHOTOLIST-'].update(display_list)
+
     return
 
 
@@ -142,6 +152,7 @@ layout = [
                               [sg.Text('Matched Photos:', size=(20, 1)), sg.Text('', size=(3, 1), key='-MATCHED-'),
                                sg.Text('GPX Start:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_START-'),
                                sg.Text('GPX End:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_END-')]])],
+    [sg.Listbox(values=[' '], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, size=(150, 20), key='-PHOTOLIST-')],
     [sg.Btn('Exit', key='-EXIT-')]
 ]
 window = sg.Window('Match Locations', layout)
@@ -178,15 +189,11 @@ while True:
             if not path == '':
                 analyse_folder()
 
+    if event == '-PHOTOLIST-':
+        selected = values['-PHOTOLIST-']
+        for item in selected:
+            print(item)
+
 window.close()
 
-# while True:
-#     photo_data = []
-#     path = get_folder()
-#     if not path == '':
-#         matchlocations.get_photo_data(path, photo_data)
-#         set_data = get_set_data(photo_data)
-#         sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (set_data['photo_count'], set_data['matched_count']))
-#
-#     break
 
