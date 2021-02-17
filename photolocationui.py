@@ -5,15 +5,23 @@ import os
 import gpxpy
 import gpxpy.gpx
 import webbrowser
+from PIL import Image, ImageTk
+
 from datetime import datetime
 from photmetadata import PhotoMetadata
 
 
 # Key data is global
+# Folder with photos to label
 path = ''
+# GPX file to use for reference
 gpx_filespec = ''
+# Data on the set of photos and track
 set_data = None
+# Data on each photo (list of PhotoMetaData objects)
 photo_data = []
+# The time correction to apply (seconds)
+correction = 0.0
 
 
 def get_folder():
@@ -103,9 +111,8 @@ def get_gpx_data(gpx_file, set_data):
 def analyse_folder():
 
     # Remove items from list in case it is second time around
-    photo_data.clear()
 
-    matchlocations.get_photo_data(path, photo_data, gpx_filespec)
+    matchlocations.match_locations(gpx_filespec, photo_data, path, correction)
     set_data = get_set_data(photo_data)
     sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (
     set_data['photo_count'], set_data['matched_count']))
@@ -137,17 +144,6 @@ def analyse_folder():
 
     return
 
-def display_details(photo):
-    """
-
-    :param photo: PhotomMetadata
-    """
-
-    window['-LAT-'].update(photo.latitude)
-    window['-LONG-'].update(photo.longitude)
-    window['-DISPLAY-'].update(disabled=False)
-#
-
 
 # Main window definition
 sg.theme('SystemDefault1')
@@ -168,7 +164,11 @@ layout = [
     [sg.Listbox(values=[' '], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, size=(75, 20), key='-PHOTOLIST-'),
      sg.Col([[sg.Text('Latitude:', size=(10, 1)), sg.Input('', size=(15, 1), key='-LAT-')],
              [sg.Text('Longitude:', size=(10, 1)), sg.Input('', size=(15, 1), key='-LONG-')],
-             [sg.Btn('Display', disabled=True, key='-DISPLAY-')]])
+             [sg.Text('Correction:', size=(10, 1)), sg.Input('0', disabled=True, size=(10, 1), enable_events=True, key='-CORRECTION-')],
+             [sg.Btn('Display', disabled=True, key='-DISPLAY-'),
+              sg.Btn('Calc Correction', disabled=True, key='-CALC_CORRECTION-'),
+              sg.Btn('Apply', disabled=True, key='-APPLY_CORRECTION-')],
+             [sg.Image(size=(275, 275), background_color='light gray', key='-THUMBNAIL-')]])
      ],
     [sg.Btn('Exit', key='-EXIT-')]
 ]
@@ -182,7 +182,7 @@ while True:
     if event == '-EXIT-' or event == sg.WINDOW_CLOSED:
         break
 
-    if event == '-SELECT_SOURCE_FOLDER-':
+    elif event == '-SELECT_SOURCE_FOLDER-':
         path = get_folder()
         if not path == '':
             # Get folder name from path and update window info
@@ -193,9 +193,11 @@ while True:
             # Is there a gpx file
             gpx_filespec = check_gpx(path)
             if not gpx_filespec == '':
+                photo_data.clear()
+                matchlocations.load_photo_data(path, photo_data)
                 analyse_folder()
 
-    if event == '-SELECT_GPX_FILE-':
+    elif event == '-SELECT_GPX_FILE-':
         gpx_filespec = get_file()
         if not gpx_filespec == '':
             # Get filename from path and update window info
@@ -204,9 +206,11 @@ while True:
             window['-GPX_FILE-'].update(gpx_file)
             # Has a path already been selected
             if not path == '':
+                photo_data.clear()
+                matchlocations.load_photo_data(path, photo_data)
                 analyse_folder()
 
-    if event == '-PHOTOLIST-':
+    elif event == '-PHOTOLIST-':
         selected = values['-PHOTOLIST-']
         for item in selected:
             params = re.split('\t', item)
@@ -218,10 +222,27 @@ while True:
         window['-LAT-'].update(selected_photo.latitude)
         window['-LONG-'].update(selected_photo.longitude)
         window['-DISPLAY-'].update(disabled=False)
-        print(selected_photo.filename)
+        window['-CORRECTION-'].update(disabled=False)
+        window['-CALC_CORRECTION-'].update(disabled=False)
 
-    if event == '-DISPLAY-':
+        image = Image.open(path + '/' + selected_photo.filename)
+        image.thumbnail((275, 275))
+        photo_img = ImageTk.PhotoImage(image)
+        window['-THUMBNAIL-'].update(data=photo_img)
+
+    elif event == '-DISPLAY-':
         webbrowser.open_new_tab(selected_photo.get_osm_link())
+
+    elif event == '-CORRECTION-':
+        try:
+            correction = float(values['-CORRECTION-'])
+            window['-APPLY_CORRECTION-'].update(disabled=False)
+#            print(correction)
+        except ValueError:
+            correction = 0.0
+
+    elif event == '-APPLY_CORRECTION-':
+        analyse_folder()
 
 window.close()
 

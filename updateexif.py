@@ -85,23 +85,13 @@ def create_gps_dict(lat, long, elevation):
 # End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
 
 
-def update_exif():
-    """Update exif info in files"""
+def update_exif(photos, path):
+    """Update exif info in files
+    :type photos: list of PhotoMetaData
+    :type path: str
+    """
 
     # Read in data
-    photos = []
-    for entry in os.scandir(path):
-        if (entry.path.endswith(".gpx")):
-            with open(entry.path.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
-                header_line = csv_file.readline()
-                for line in csv_file:
-                    # Create record and add to list
-                    csv_data = re.split(',', line)
-                    rec = PhotoMetadata(csv_data[0],
-                                        datetime.strptime(csv_data[1], "%d:%m:%Y %H:%M:%S"),
-                                        float(csv_data[2]),
-                                        float(csv_data[3]),)
-                    photos.append(rec)
 
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
@@ -136,4 +126,18 @@ def update_exif():
 
 
 if __name__ == '__main__':
-    update_exif()
+    photos = []
+    for entry in os.scandir(path):
+        if (entry.path.endswith(".gpx")):
+            with open(entry.path.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
+                header_line = csv_file.readline()
+                for line in csv_file:
+                    # Create record and add to list
+                    csv_data = re.split(',', line)
+                    rec = PhotoMetadata(csv_data[0],
+                                        datetime.strptime(csv_data[1], "%d:%m:%Y %H:%M:%S"),
+                                        float(csv_data[2]),
+                                        float(csv_data[3]),)
+                    photos.append(rec)
+
+    update_exif(photos, path)

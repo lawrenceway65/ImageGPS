@@ -7,6 +7,7 @@ from datetime import timedelta
 import time
 import os
 import piexif
+import re
 from fractions import Fraction
 from photmetadata import PhotoMetadata
 import photmetadata
@@ -24,24 +25,30 @@ else:
 
 # Time correction to apply to photo time
 correction_seconds = 0
-correction = timedelta(0, correction_seconds)
+hardcoded_correction = timedelta(0, correction_seconds)
 
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
 
 
 
-def match_locations(gpx_xml, photo_data, path):
+def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
     """For each photo record, find the co-ordinates for the matching time from the gpx data
     If a correction is set apply it to the photo time (for when camera time was set wrong).
     :param gpx_xml: gpx data
     :type gpx_xml: xml
     :type photo_data: PhotoMetadata[]
+    :type path: str
+    :type correction: float
     """
     # Variables
     photo_count = 0
+    correction = timedelta(0, correction_seconds)
+
+    with open(gpx_filespec, 'r') as file:
+        gpx_data = file.read()
 
     # Parse to gpx and iterate through
-    input_gpx = gpxpy.parse(gpx_xml)
+    input_gpx = gpxpy.parse(gpx_data)
     for track in input_gpx.tracks:
         for segment in track.segments:
             for point in segment.points:
@@ -52,7 +59,8 @@ def match_locations(gpx_xml, photo_data, path):
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photo_data):
                     # Found a match so update
-#                    print('Point: %s Photo(orig): %s Photo(corr): %s' % (point.time, photo_data[photo_count].timestamp, corrected_time))
+                    # print('Point: %s Photo(orig): %s Photo(corr): %s'
+                    # % (point.time, photo_data[photo_count].timestamp, corrected_time))
                     photo_data[photo_count].timestamp = corrected_time
                     photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
                     # Next one
@@ -73,6 +81,15 @@ def match_locations(gpx_xml, photo_data, path):
                        correction_seconds,
                        photo_count,
                        len(photo_data)))
+
+    filespec_split = re.split('/', gpx_filespec)
+    gpx_filename = filespec_split[len(filespec_split)-1]
+    with open(path + '/' + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
+        csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
+        for record in photo_data:
+            csv_file.write(record.csv_output())
+
+    return
 
 
 def get_photo_data(path, photo_data, gpx_file=''):
@@ -109,6 +126,24 @@ def get_photo_data(path, photo_data, gpx_file=''):
             csv_file.write(record.csv_output())
 
     return len(photo_data)
+
+
+def load_photo_data(path, photo_data):
+    """Build list photos with date taken from exif metadata
+    :type path: str
+    :type photo_data: list of PhotoMetaData
+    """
+    # Build list of photos
+    for entry in os.scandir(path):
+        if (entry.path.endswith(".jpg")):
+            exif_dict = piexif.load(entry.path)
+            photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+            rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
+            photo_data.append(rec)
+    # Sort list by date/time
+    photo_data.sort()
+
+    return
 
 
 if __name__ == '__main__':
