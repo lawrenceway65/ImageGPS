@@ -146,7 +146,7 @@ def display_details(photo):
     window['-LAT-'].update(photo.latitude)
     window['-LONG-'].update(photo.longitude)
     window['-DISPLAY-'].update(disabled=False)
-#        webbrowser.open_new_tab(photo.get_osm_link())
+#
 
 
 # Main window definition
@@ -215,8 +215,13 @@ while True:
             if item.filename == img_file:
                 selected_photo = item
                 break
+        window['-LAT-'].update(selected_photo.latitude)
+        window['-LONG-'].update(selected_photo.longitude)
+        window['-DISPLAY-'].update(disabled=False)
         print(selected_photo.filename)
-        display_details(selected_photo)
+
+    if event == '-DISPLAY-':
+        webbrowser.open_new_tab(selected_photo.get_osm_link())
 
 window.close()
 
