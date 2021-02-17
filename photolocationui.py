@@ -141,21 +141,12 @@ def display_details(photo):
     """
 
     :param photo: PhotomMetadata
-    :return:
     """
-    layout = [[sg.Text('Photo Details')],
-              [sg.Text(photo.filename)],
-              [sg.Text(photo.location)],
-              [sg.Text('Latitude:', size=(10,1)), sg.Input(photo.latitude, size=(15,1), key='-LAT-')],
-              [sg.Text('Longitude:', size=(10, 1)), sg.Input(photo.longitude, size=(15, 1), key='-LONG-')],
-              [sg.Btn('Display'), sg.Cancel()]]
 
-    window = sg.Window('Location', layout)
-
-    event, values = window.read()
-    window.close()
-    if event == 'Display':
-        webbrowser.open_new_tab(photo.get_osm_link())
+    window['-LAT-'].update(photo.latitude)
+    window['-LONG-'].update(photo.longitude)
+    window['-DISPLAY-'].update(disabled=False)
+#        webbrowser.open_new_tab(photo.get_osm_link())
 
 
 # Main window definition
@@ -174,7 +165,11 @@ layout = [
                               [sg.Text('Matched Photos:', size=(20, 1)), sg.Text('', size=(3, 1), key='-MATCHED-'),
                                sg.Text('GPX Start:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_START-'),
                                sg.Text('GPX End:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_END-')]])],
-    [sg.Listbox(values=[' '], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, size=(150, 20), key='-PHOTOLIST-')],
+    [sg.Listbox(values=[' '], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, size=(75, 20), key='-PHOTOLIST-'),
+     sg.Col([[sg.Text('Latitude:', size=(10, 1)), sg.Input('', size=(15, 1), key='-LAT-')],
+             [sg.Text('Longitude:', size=(10, 1)), sg.Input('', size=(15, 1), key='-LONG-')],
+             [sg.Btn('Display', disabled=True, key='-DISPLAY-')]])
+     ],
     [sg.Btn('Exit', key='-EXIT-')]
 ]
 window = sg.Window('Match Locations', layout)
@@ -203,7 +198,7 @@ while True:
     if event == '-SELECT_GPX_FILE-':
         gpx_filespec = get_file()
         if not gpx_filespec == '':
-            # Get filename from path and update iwndow info
+            # Get filename from path and update window info
             path_list = re.split('/', gpx_filespec)
             gpx_file = path_list[len(path_list) - 1]
             window['-GPX_FILE-'].update(gpx_file)
