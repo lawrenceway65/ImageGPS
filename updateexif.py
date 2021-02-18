@@ -7,6 +7,7 @@ import re
 import piexif
 from fractions import Fraction
 from photmetadata import PhotoMetadata
+import PySimpleGUI as sg
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -105,6 +106,7 @@ def update_exif(photos, path):
 
             gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
 
+            print('%s %s %f %f' % (record.filename, record.timestamp, record.latitude, record.longitude))
             # Write the data
             update_time = datetime.strftime(record.timestamp, "%Y:%m:%d %H:%M:%S")
             exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
@@ -120,7 +122,7 @@ def update_exif(photos, path):
                      os.path.basename(entry.path),
                      original_time,
                      update_time))
-            print(log)
+            sg.Print(log)
             with open('%s/exif_update.log' % path, 'a') as logfile:
                 logfile.write(log + '\n')
 

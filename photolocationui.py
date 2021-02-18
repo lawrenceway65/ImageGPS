@@ -7,6 +7,7 @@ import gpxpy.gpx
 import webbrowser
 from PIL import Image, ImageTk
 import calculatecorrection
+import updateexif as ue
 
 from datetime import datetime
 from photmetadata import PhotoMetadata
@@ -144,6 +145,7 @@ def analyse_folder():
                                        item.longitude)
         display_list.append(s)
     window['-PHOTOLIST-'].update(display_list)
+    window['-WRITE_CHANGES-'].update(disabled=False)
 
     return
 
@@ -170,7 +172,8 @@ layout = [
              [sg.Btn('Display', disabled=True, key='-DISPLAY-'),
               sg.Btn('Calc Correction', disabled=True, key='-CALC_CORRECTION-'),
               sg.Btn('Apply', disabled=True, key='-APPLY_CORRECTION-')],
-             [sg.Image(size=(275, 275), background_color='light gray', key='-THUMBNAIL-')]])
+             [sg.Image(size=(275, 275), background_color='light gray', key='-THUMBNAIL-')],
+             [sg.Btn('Write changes', disabled=True, key='-WRITE_CHANGES-')]])
      ],
     [sg.Btn('Exit', key='-EXIT-')]
 ]
@@ -271,12 +274,13 @@ while True:
         except ValueError:
             longitude = 0.0
 
+    elif event == '-WRITE_CHANGES-':
+        ue.update_exif(photo_data, path)
+
     if latitude == 0.0 and longitude == 0.0:
         window['-CALC_CORRECTION-'].update(disabled=True)
     else:
         window['-CALC_CORRECTION-'].update(disabled=False)
-
-
 
 window.close()
 
