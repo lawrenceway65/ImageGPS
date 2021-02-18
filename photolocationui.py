@@ -6,6 +6,7 @@ import gpxpy
 import gpxpy.gpx
 import webbrowser
 from PIL import Image, ImageTk
+import calculatecorrection
 
 from datetime import datetime
 from photmetadata import PhotoMetadata
@@ -28,18 +29,20 @@ def get_folder():
     """Dialog to get folder to analyse.
     :return str path
     """
-    layout = [[sg.Text('Photo Location - Select Folder')],
-            [sg.Input(), sg.FolderBrowse()],
-            [sg.OK(), sg.Cancel()]]
+    sg.FolderBrowse()
 
-    window = sg.Window('Select folder to analyse', layout)
-
-    event, values = window.read()
-    window.close()
-    if event == 'OK':
-        return values[0]
-    else:
-        return ''
+    # layout = [[sg.Text('Photo Location - Select Folder')],
+    #         [sg.Input(), sg.FolderBrowse()],
+    #         [sg.OK(), sg.Cancel()]]
+    #
+    # window = sg.Window('Select folder to analyse', layout)
+    #
+    # event, values = window.read()
+    # window.close()
+    # if event == 'OK':
+    #     return values[0]
+    # else:
+    #     return ''
 
 
 def get_file():
@@ -150,8 +153,7 @@ sg.theme('SystemDefault1')
 sg.SetOptions(font=('Arial', 14))
 layout = [
     [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('folder not selected', size=(60, 1), key='-SOURCE_FOLDER-'),
-     sg.Btn('Select', key='-SELECT_SOURCE_FOLDER-')],
+     sg.Input('folder not selected', size=(60, 1), enable_events=True, key='-SOURCE_FOLDER-'), sg.FolderBrowse()],
     [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
      sg.Text('gpx file not selected', size=(60, 1), key='-GPX_FILE-'),
      sg.Btn('Select', key='-SELECT_GPX_FILE-')],
@@ -162,8 +164,8 @@ layout = [
                                sg.Text('GPX Start:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_START-'),
                                sg.Text('GPX End:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_END-')]])],
     [sg.Listbox(values=[' '], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, size=(75, 20), key='-PHOTOLIST-'),
-     sg.Col([[sg.Text('Latitude:', size=(10, 1)), sg.Input('', size=(15, 1), key='-LAT-')],
-             [sg.Text('Longitude:', size=(10, 1)), sg.Input('', size=(15, 1), key='-LONG-')],
+     sg.Col([[sg.Text('Latitude:', size=(10, 1)), sg.Input('', size=(15, 1), enable_events=True, key='-LAT-')],
+             [sg.Text('Longitude:', size=(10, 1)), sg.Input('', size=(15, 1), enable_events=True, key='-LONG-')],
              [sg.Text('Correction:', size=(10, 1)), sg.Input('0', disabled=True, size=(10, 1), enable_events=True, key='-CORRECTION-')],
              [sg.Btn('Display', disabled=True, key='-DISPLAY-'),
               sg.Btn('Calc Correction', disabled=True, key='-CALC_CORRECTION-'),
@@ -174,6 +176,8 @@ layout = [
 ]
 window = sg.Window('Match Locations', layout)
 
+latitude = 0.0
+longitude = 0.0
 
 while True:
     event, values = window.read()
@@ -182,8 +186,8 @@ while True:
     if event == '-EXIT-' or event == sg.WINDOW_CLOSED:
         break
 
-    elif event == '-SELECT_SOURCE_FOLDER-':
-        path = get_folder()
+    elif event == '-SOURCE_FOLDER-':
+        path = values['-SOURCE_FOLDER-']
         if not path == '':
             # Get folder name from path and update window info
             path_list = re.split('/', path)
@@ -193,6 +197,10 @@ while True:
             # Is there a gpx file
             gpx_filespec = check_gpx(path)
             if not gpx_filespec == '':
+                # Get filename from path and update window info
+                path_list = re.split('/', gpx_filespec)
+                gpx_file = path_list[len(path_list) - 1]
+                window['-GPX_FILE-'].update(gpx_file)
                 photo_data.clear()
                 matchlocations.load_photo_data(path, photo_data)
                 analyse_folder()
@@ -223,7 +231,6 @@ while True:
         window['-LONG-'].update(selected_photo.longitude)
         window['-DISPLAY-'].update(disabled=False)
         window['-CORRECTION-'].update(disabled=False)
-        window['-CALC_CORRECTION-'].update(disabled=False)
 
         image = Image.open(path + '/' + selected_photo.filename)
         image.thumbnail((275, 275))
@@ -243,6 +250,33 @@ while True:
 
     elif event == '-APPLY_CORRECTION-':
         analyse_folder()
+
+    elif event == '-CALC_CORRECTION-':
+        correction = calculatecorrection.calculate_correction(path, selected_photo.filename, gpx_filespec, latitude, longitude)
+        window['-CORRECTION-'].update(correction)
+        if not correction == 0.0:
+            window['-APPLY_CORRECTION-'].update(disabled=False)
+        # Can reset now
+        latitude = longitude = 0.0
+
+    elif event == '-LAT-':
+        try:
+            latitude = float(values['-LAT-'])
+        except ValueError:
+            latitude = 0.0
+
+    elif event == '-LONG-':
+        try:
+            longitude = float(values['-LONG-'])
+        except ValueError:
+            longitude = 0.0
+
+    if latitude == 0.0 and longitude == 0.0:
+        window['-CALC_CORRECTION-'].update(disabled=True)
+    else:
+        window['-CALC_CORRECTION-'].update(disabled=False)
+
+
 
 window.close()
 

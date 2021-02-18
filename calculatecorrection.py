@@ -59,25 +59,25 @@ def get_difference(gpx_xml, photo_time, lat, long):
         return correction
 
 
-def calculate_correction():
+def calculate_correction(path, photo_file, gpx_filespec, lat, long):
 
-    photo = 'IMG_6642.jpg'
-    lat = 51.400984
-    long = -0.34279
+    # photo = 'IMG_6642.jpg'
+    # lat = 51.400984
+    # long = -0.34279
 
     # Get time photo taken from exif
-    image = Image.open(path + '/' + photo)
+    image = Image.open(path + '/' + photo_file)
     exif = image.getexif()
     for tag, value in exif.items():
         if TAGS.get(tag, tag) == 'DateTimeOriginal':
             photo_time = datetime.strptime(value, "%Y:%m:%d %H:%M:%S")
 
-    for entry in os.scandir(path):
-        if (entry.path.endswith(".gpx")):
-            with open(entry.path, 'r') as gpx_file:
-                gpx_data = gpx_file.read()
-            correction = get_difference(gpx_data, photo_time, lat, long)
+    with open(gpx_filespec, 'r') as gpx_file:
+        gpx_data = gpx_file.read()
+    correction = get_difference(gpx_data, photo_time, lat, long)
+
     print(correction)
+    return correction
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
