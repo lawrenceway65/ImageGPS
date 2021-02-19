@@ -104,7 +104,7 @@ def analyse_folder():
     # Get gpx data
     get_gpx_data(gpx_filespec, set_data)
     # Get filename from path and update window info
-    path_list = re.split('/', gpx_filespec)
+    path_list = re.split(os.sep, gpx_filespec)
     gpx_file = path_list[len(path_list) - 1]
     window['-GPX_FILE-'].update(gpx_file)
 
@@ -189,7 +189,7 @@ while True:
         path = values['-SOURCE_FOLDER-']
         if not path == '':
             # Get folder name from path and update window info
-            path_list = re.split('/', path)
+            path_list = re.split(os.sep, path)
             dir_name = path_list[len(path_list) - 1]
             window['-SOURCE_FOLDER-'].update(dir_name)
 
@@ -197,7 +197,7 @@ while True:
             gpx_filespec = check_gpx(path)
             if not gpx_filespec == '':
                 # Get filename from path and update window info
-                path_list = re.split('/', gpx_filespec)
+                path_list = re.split(os.sep, gpx_filespec)
                 gpx_file = path_list[len(path_list) - 1]
                 window['-GPX_FILE-'].update(gpx_file)
                 clear_photo_data()
@@ -208,7 +208,7 @@ while True:
         gpx_filespec = get_file()
         if not gpx_filespec == '':
             # Get filename from path and update window info
-            path_list = re.split('/', gpx_filespec)
+            path_list = re.split(os.sep, gpx_filespec)
             gpx_file = path_list[len(path_list) - 1]
             window['-GPX_FILE-'].update(gpx_file)
             # Has a path already been selected
@@ -231,7 +231,7 @@ while True:
         window['-DISPLAY-'].update(disabled=False)
         window['-CORRECTION-'].update(disabled=False)
 
-        image = Image.open(path + '/' + selected_photo.filename)
+        image = Image.open(path + os.sep + selected_photo.filename)
         image.thumbnail((275, 275))
         photo_img = ImageTk.PhotoImage(image)
         window['-THUMBNAIL-'].update(data=photo_img)
