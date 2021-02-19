@@ -86,13 +86,28 @@ def create_gps_dict(lat, long, elevation):
 # End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
 
 
-def update_exif(photos, path):
+def update_exif(path, gpx_filespec):
     """Update exif info in files
-    :type photos: list of PhotoMetaData
     :type path: str
+    :type gpx_filespec: str
     """
+    photos = []
 
     # Read in data
+    with open(gpx_filespec.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
+        header_line = csv_file.readline()
+        for line in csv_file:
+            # Create record and add to list
+            csv_data = re.split(',', line)
+            rec = PhotoMetadata(csv_data[0],
+                                datetime.strptime(csv_data[1], "%d:%m:%Y %H:%M:%S"),
+                                float(csv_data[2]),
+                                float(csv_data[3]),)
+            photos.append(rec)
+
+    if len(photos) == 0:
+        # No valid data so return
+        return
 
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
@@ -113,6 +128,7 @@ def update_exif(photos, path):
             exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
             exif_dict.update(gps_dict)
             exif_bytes = piexif.dump(exif_dict)
+#            print(exif_bytes)
             jpeg_file = Image.open(entry.path)
             jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
 
@@ -128,18 +144,13 @@ def update_exif(photos, path):
 
 
 if __name__ == '__main__':
-    photos = []
+    sg.Print = print
+
+    gpx_filespec = ''
     for entry in os.scandir(path):
         if (entry.path.endswith(".gpx")):
-            with open(entry.path.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
-                header_line = csv_file.readline()
-                for line in csv_file:
-                    # Create record and add to list
-                    csv_data = re.split(',', line)
-                    rec = PhotoMetadata(csv_data[0],
-                                        datetime.strptime(csv_data[1], "%d:%m:%Y %H:%M:%S"),
-                                        float(csv_data[2]),
-                                        float(csv_data[3]),)
-                    photos.append(rec)
+            gpx_filespec = entry.path
+            break
 
-    update_exif(photos, path)
+    if gpx_filespec != '':
+        update_exif(path, gpx_filespec)

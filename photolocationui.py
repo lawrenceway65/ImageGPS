@@ -275,7 +275,7 @@ while True:
             longitude = 0.0
 
     elif event == '-WRITE_CHANGES-':
-        ue.update_exif(photo_data, path)
+        ue.update_exif(path, gpx_filespec)
 
     if latitude == 0.0 and longitude == 0.0:
         window['-CALC_CORRECTION-'].update(disabled=True)
