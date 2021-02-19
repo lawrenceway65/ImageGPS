@@ -121,7 +121,7 @@ def update_exif(path, gpx_filespec):
 
             gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
 
-            print('%s %s %f %f' % (record.filename, record.timestamp, record.latitude, record.longitude))
+#            print('%s %s %f %f' % (record.filename, record.timestamp, record.latitude, record.longitude))
             # Write the data
             update_time = datetime.strftime(record.timestamp, "%Y:%m:%d %H:%M:%S")
             exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
@@ -138,7 +138,7 @@ def update_exif(path, gpx_filespec):
                      os.path.basename(entry.path),
                      original_time,
                      update_time))
-            sg.Print(log)
+            print(log)
             with open('%s/exif_update.log' % path, 'a') as logfile:
                 logfile.write(log + '\n')
 

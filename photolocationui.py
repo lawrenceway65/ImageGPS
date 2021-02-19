@@ -26,26 +26,6 @@ photo_data = []
 correction = 0.0
 
 
-def get_folder():
-    """Dialog to get folder to analyse.
-    :return str path
-    """
-    sg.FolderBrowse()
-
-    # layout = [[sg.Text('Photo Location - Select Folder')],
-    #         [sg.Input(), sg.FolderBrowse()],
-    #         [sg.OK(), sg.Cancel()]]
-    #
-    # window = sg.Window('Select folder to analyse', layout)
-    #
-    # event, values = window.read()
-    # window.close()
-    # if event == 'OK':
-    #     return values[0]
-    # else:
-    #     return ''
-
-
 def get_file():
     """Dialog to get gpx file, if not in selected folder.
     :return str file name / path
@@ -150,6 +130,22 @@ def analyse_folder():
     return
 
 
+def clear_photo_data():
+    photo_data.clear()
+
+    window['-PHOTOS-'].update('')
+    window['-MATCHED-'].update('')
+    window['-FIRST_PHOTO-'].update('')
+    window['-LAST_PHOTO-'].update('')
+    window['-GPX_START-'].update('')
+    window['-GPX_END-'].update('')
+    window['-LAT-'].update('')
+    window['-LONG-'].update('')
+    window['-CORRECTION-'].update('0')
+    window['-PHOTOLIST-'].update(values=[' '])
+    window['-THUMBNAIL-'].update(data=None)
+
+
 # Main window definition
 sg.theme('SystemDefault1')
 sg.SetOptions(font=('Arial', 14))
@@ -204,7 +200,7 @@ while True:
                 path_list = re.split('/', gpx_filespec)
                 gpx_file = path_list[len(path_list) - 1]
                 window['-GPX_FILE-'].update(gpx_file)
-                photo_data.clear()
+                clear_photo_data()
                 matchlocations.load_photo_data(path, photo_data)
                 analyse_folder()
 
@@ -217,7 +213,7 @@ while True:
             window['-GPX_FILE-'].update(gpx_file)
             # Has a path already been selected
             if not path == '':
-                photo_data.clear()
+                clear_photo_data()
                 matchlocations.load_photo_data(path, photo_data)
                 analyse_folder()
 
@@ -252,6 +248,7 @@ while True:
             correction = 0.0
 
     elif event == '-APPLY_CORRECTION-':
+        window['-APPLY_CORRECTION-'].update(disabled=True)
         analyse_folder()
 
     elif event == '-CALC_CORRECTION-':
@@ -275,7 +272,11 @@ while True:
             longitude = 0.0
 
     elif event == '-WRITE_CHANGES-':
-        ue.update_exif(path, gpx_filespec)
+        if sg.PopupOKCancel('OK to write changes to files?\n This operation is not reversible') == 'OK':
+            # Disable button so can do it twice
+            window['-WRITE_CHANGES-'].update(disabled=True)
+            # Write the changes
+            ue.update_exif(path, gpx_filespec)
 
     if latitude == 0.0 and longitude == 0.0:
         window['-CALC_CORRECTION-'].update(disabled=True)
