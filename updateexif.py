@@ -138,7 +138,7 @@ def update_exif(path, gpx_filespec):
                      os.path.basename(entry.path),
                      original_time,
                      update_time))
-            print(log)
+            sg.Print(log)
             with open('%s/exif_update.log' % path, 'a') as logfile:
                 logfile.write(log + '\n')
 

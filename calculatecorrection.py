@@ -13,6 +13,52 @@ import subprocess
 import json
 
 
+class PointList:
+    def __init__(self):
+        self.min = 99999
+        self.point_list = []
+        self.getting_closer = True
+
+    def new_point(self, point, distance, correction):
+        add = False
+        if len(self.point_list) < 10:
+            add = True
+        else:
+            max_distance = 0
+            max_index = 999
+            index = 0
+            for item in self.point_list:
+                if item[0] > max_distance:
+                    max_distance = item[0]
+                    max_index = index
+                index += 1
+            if max_index != 999:
+                add = True
+                del self.point_list[max_index]
+
+        if add:
+            rec = (distance, point.latitude, point.longitude, correction)
+            self.point_list.append(rec)
+
+        # if distance < self.min:
+        #     rec = (distance, point.latitude, point.longitude, correction)
+        #     self.point_list.append(rec)
+        #     self.min = distance
+        #     self.getting_closer = True
+        #     if len(self.point_list) > 5:
+        #         self.point_list.pop(0)
+        # else:
+        #     self.getting_closer = False
+        #     if len(self.point_list) < 10:
+        #         rec = (distance, point.latitude, point.longitude, correction)
+        #         self.point_list.append(rec)
+        # print(len(self.point_list))
+
+    def print_list(self):
+        for rec in self.point_list:
+            print("%f\t%f\t%f\t%d" % (rec[0], rec[1], rec[2], rec[3]))
+
+
 if os.name == 'nt':
     path = "D:\\Pictures\\2021\\2021_Test_AddlestoneMorningWalk"
 else:
@@ -41,6 +87,7 @@ def get_difference(gpx_xml, photo_time, lat, long):
     """
     min_separation = 9999
     reference_point = gpxpy.gpx.GPXTrackPoint(latitude=lat, longitude=long)
+    point_list = PointList()
 
     # Parse to gpx and iterate through to find closest point to co-ordinates
     input_gpx = gpxpy.parse(gpx_xml)
@@ -48,6 +95,7 @@ def get_difference(gpx_xml, photo_time, lat, long):
         for segment in track.segments:
             for point in segment.points:
                 separation = calculate_distance(point, reference_point)
+                point_list.new_point(point, separation, point.time.timestamp() - photo_time.timestamp())
                 if separation < min_separation:
                     min_separation = separation
                     correction = point.time.timestamp() - photo_time.timestamp()
@@ -56,6 +104,7 @@ def get_difference(gpx_xml, photo_time, lat, long):
         print('Point not found')
         return 9999
     else:
+        point_list.print_list()
         return correction
 
 
