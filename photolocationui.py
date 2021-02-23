@@ -25,13 +25,18 @@ photo_data = []
 # The time correction to apply (seconds)
 correction = 0.0
 
+if os.name == 'nt':
+    path_sep = '\\'
+else:
+    path_sep = '/'
+
 
 def get_file():
     """Dialog to get gpx file, if not in selected folder.
     :return str file name / path
     """
     layout = [[sg.Text('GPX File - Select File')],
-            [sg.Input(), sg.FileBrowse(file_types=(("GPX files","*.gpx")))],
+            [sg.Input(), sg.FileBrowse()],
             [sg.OK(), sg.Cancel()]]
 
     window = sg.Window('Select track file', layout)
@@ -104,8 +109,9 @@ def analyse_folder():
     # Get gpx data
     get_gpx_data(gpx_filespec, set_data)
     # Get filename from path and update window info
-    path_list = re.split(os.sep, gpx_filespec)
-    gpx_file = path_list[len(path_list) - 1]
+    # path_list = re.split(path_sep, gpx_filespec)
+    # gpx_file = path_list[len(path_list) - 1]
+    gpx_file = os.path.basename(gpx_filespec)
     window['-GPX_FILE-'].update(gpx_file)
 
     # Update window info
@@ -189,17 +195,13 @@ while True:
         path = values['-SOURCE_FOLDER-']
         if not path == '':
             # Get folder name from path and update window info
-            path_list = re.split(os.sep, path)
-            dir_name = path_list[len(path_list) - 1]
-            window['-SOURCE_FOLDER-'].update(dir_name)
+            dir_name = os.path.basename(path)
+            window['-SOURCE_FOLDER-'].update(os.path.basename(path))
 
             # Is there a gpx file
             gpx_filespec = check_gpx(path)
             if not gpx_filespec == '':
-                # Get filename from path and update window info
-                path_list = re.split(os.sep, gpx_filespec)
-                gpx_file = path_list[len(path_list) - 1]
-                window['-GPX_FILE-'].update(gpx_file)
+                window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
                 clear_photo_data()
                 matchlocations.load_photo_data(path, photo_data)
                 analyse_folder()
@@ -208,9 +210,7 @@ while True:
         gpx_filespec = get_file()
         if not gpx_filespec == '':
             # Get filename from path and update window info
-            path_list = re.split(os.sep, gpx_filespec)
-            gpx_file = path_list[len(path_list) - 1]
-            window['-GPX_FILE-'].update(gpx_file)
+            window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
             # Has a path already been selected
             if not path == '':
                 clear_photo_data()
@@ -231,7 +231,7 @@ while True:
         window['-DISPLAY-'].update(disabled=False)
         window['-CORRECTION-'].update(disabled=False)
 
-        image = Image.open(path + os.sep + selected_photo.filename)
+        image = Image.open(path + path_sep + selected_photo.filename)
         image.thumbnail((275, 275))
         photo_img = ImageTk.PhotoImage(image)
         window['-THUMBNAIL-'].update(data=photo_img)

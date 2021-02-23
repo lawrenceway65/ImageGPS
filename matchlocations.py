@@ -82,9 +82,10 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                        photo_count,
                        len(photo_data)))
 
-    filespec_split = re.split('/', gpx_filespec)
-    gpx_filename = filespec_split[len(filespec_split)-1]
-    with open(path + '/' + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
+    # filespec_split = re.split('/', gpx_filespec)
+    # gpx_filename = filespec_split[len(filespec_split)-1]
+    gpx_filename = os.path.basename(gpx_filespec)
+    with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
         csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
         for record in photo_data:
             csv_file.write(record.csv_output())
