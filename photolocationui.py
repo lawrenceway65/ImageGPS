@@ -139,6 +139,7 @@ def analyse_folder():
 def clear_photo_data():
     photo_data.clear()
 
+    window['-GPX_FILE-'].update('')
     window['-PHOTOS-'].update('')
     window['-MATCHED-'].update('')
     window['-FIRST_PHOTO-'].update('')
@@ -154,7 +155,7 @@ def clear_photo_data():
 
 # Main window definition
 sg.theme('SystemDefault1')
-sg.SetOptions(font=('Arial', 14))
+sg.SetOptions(font=('Arial', 12))
 layout = [
     [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
      sg.Input('folder not selected', size=(60, 1), enable_events=True, key='-SOURCE_FOLDER-'), sg.FolderBrowse()],
@@ -192,17 +193,17 @@ while True:
         break
 
     elif event == '-SOURCE_FOLDER-':
+        clear_photo_data()
         path = values['-SOURCE_FOLDER-']
         if not path == '':
             # Get folder name from path and update window info
             dir_name = os.path.basename(path)
             window['-SOURCE_FOLDER-'].update(os.path.basename(path))
 
-            # Is there a gpx file
+            # Is there a gpx file?
             gpx_filespec = check_gpx(path)
             if not gpx_filespec == '':
                 window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
-                clear_photo_data()
                 matchlocations.load_photo_data(path, photo_data)
                 analyse_folder()
 
@@ -243,7 +244,6 @@ while True:
         try:
             correction = float(values['-CORRECTION-'])
             window['-APPLY_CORRECTION-'].update(disabled=False)
-#            print(correction)
         except ValueError:
             correction = 0.0
 
@@ -273,10 +273,11 @@ while True:
 
     elif event == '-WRITE_CHANGES-':
         if sg.PopupOKCancel('OK to write changes to files?\n This operation is not reversible') == 'OK':
-            # Disable button so can do it twice
+            # Disable button so can't do it twice
             window['-WRITE_CHANGES-'].update(disabled=True)
             # Write the changes
             ue.update_exif(path, gpx_filespec)
+            sg.popup_ok('Changes written %d files.' % len(photo_data))
 
     if latitude == 0.0 and longitude == 0.0:
         window['-CALC_CORRECTION-'].update(disabled=True)
