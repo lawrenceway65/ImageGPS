@@ -125,7 +125,7 @@ def analyse_folder():
     # Display list of photos
     display_list = []
     for item in photo_data:
-        s = '%s\t%s\t%2.3f\t%2.3f' % (item.filename,
+        s = '%s   %s   %2.3f %2.3f' % (item.filename,
                                        item.timestamp.strftime('%d:%m:%Y %H:%M:%S'),
                                        item.latitude,
                                        item.longitude)
@@ -138,6 +138,7 @@ def analyse_folder():
 
 def clear_photo_data():
     photo_data.clear()
+    correction = 0.0
 
     window['-GPX_FILE-'].update('')
     window['-PHOTOS-'].update('')
@@ -221,7 +222,7 @@ while True:
     elif event == '-PHOTOLIST-':
         selected = values['-PHOTOLIST-']
         for item in selected:
-            params = re.split('\t', item)
+            params = re.split(' ', item)
             img_file = params[0]
         for item in photo_data:
             if item.filename == img_file:
@@ -277,7 +278,7 @@ while True:
             window['-WRITE_CHANGES-'].update(disabled=True)
             # Write the changes
             ue.update_exif(path, gpx_filespec)
-            sg.popup_ok('Changes written %d files.' % len(photo_data))
+            sg.popup_ok('Changes written to %d files.' % len(photo_data))
 
     if latitude == 0.0 and longitude == 0.0:
         window['-CALC_CORRECTION-'].update(disabled=True)
