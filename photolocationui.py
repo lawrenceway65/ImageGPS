@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-import matchlocations
+import matchlocations as ml
 import re
 import os
 import gpxpy
@@ -72,7 +72,7 @@ def get_set_data(photo_data):
 
 
 def check_gpx(path):
-    # Check for GPX file
+    """Check if GPX file present in selected folder"""
     for entry in os.scandir(path):
         if (entry.path.endswith(".gpx")):
             return entry.path
@@ -81,7 +81,10 @@ def check_gpx(path):
 
 
 def get_gpx_data(gpx_file, set_data):
-    """Set first and last gpx point"""
+    """Get first and last gpx point and update in set data
+    :param gpx_file: gpx filespec
+    :param set_data: data to update
+    """
     with open(gpx_file, 'r') as file:
         gpx_data = file.read()
         input_gpx = gpxpy.parse(gpx_data)
@@ -98,23 +101,18 @@ def get_gpx_data(gpx_file, set_data):
 
 
 def analyse_folder():
-
-    # Remove items from list in case it is second time around
-
-    matchlocations.match_locations(gpx_filespec, photo_data, path, correction)
+    """Match locations for the photo in the folder and update the window"""
+    ml.match_locations(gpx_filespec, photo_data, path, correction)
     set_data = get_set_data(photo_data)
-    sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (
-    set_data['photo_count'], set_data['matched_count']))
+    sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.'
+                % (set_data['photo_count'], set_data['matched_count']))
 
     # Get gpx data
     get_gpx_data(gpx_filespec, set_data)
-    # Get filename from path and update window info
-    # path_list = re.split(path_sep, gpx_filespec)
-    # gpx_file = path_list[len(path_list) - 1]
     gpx_file = os.path.basename(gpx_filespec)
-    window['-GPX_FILE-'].update(gpx_file)
 
     # Update window info
+    window['-GPX_FILE-'].update(gpx_file)
     window['-PHOTOS-'].update('%d' % set_data['photo_count'])
     window['-MATCHED-'].update('%d' % set_data['matched_count'])
     window['-FIRST_PHOTO-'].update(set_data['first_photo'].strftime('%d:%m:%Y %H:%M:%S'))
@@ -204,7 +202,7 @@ while True:
             gpx_filespec = check_gpx(path)
             if not gpx_filespec == '':
                 window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
-                matchlocations.load_photo_data(path, photo_data)
+                ml.load_photo_data(path, photo_data)
                 analyse_folder()
 
     elif event == '-SELECT_GPX_FILE-':
