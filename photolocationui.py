@@ -26,24 +26,6 @@ photo_data = []
 correction = 0.0
 
 
-def get_file():
-    """Dialog to get gpx file, if not in selected folder.
-    :return str file name / path
-    """
-    layout = [[sg.Text('GPX File - Select File')],
-            [sg.Input(), sg.FileBrowse()],
-            [sg.OK(), sg.Cancel()]]
-
-    window = sg.Window('Select track file', layout)
-
-    event, values = window.read()
-    window.close()
-    if event == 'OK':
-        return values[0]
-    else:
-        return ''
-
-
 def get_set_data(photo_data):
     """Get data pertaining to set of photos. Return as dictionary
     :type photo_data: list of PhotoMetaData
@@ -107,7 +89,7 @@ def analyse_folder():
     gpx_file = os.path.basename(gpx_filespec)
 
     # Update window info
-    window['-GPX_FILE-'].update(gpx_file)
+#    window['-DISPLAY-GPX-'].update(gpx_file)
     window['-PHOTOS-'].update('%d' % set_data['photo_count'])
     window['-MATCHED-'].update('%d' % set_data['matched_count'])
     window['-FIRST_PHOTO-'].update(set_data['first_photo'].strftime('%d:%m:%Y %H:%M:%S'))
@@ -132,8 +114,8 @@ def clear_photo_data():
     photo_data.clear()
     correction = 0.0
 
-    window['-DISPLAY_FOLDER-'].update('')
-    window['-GPX_FILE-'].update('')
+#    window['-DISPLAY_FOLDER-'].update('')
+#    window['-DISPLAY-GPX-'].update('')
     window['-PHOTOS-'].update('')
     window['-MATCHED-'].update('')
     window['-FIRST_PHOTO-'].update('')
@@ -158,8 +140,8 @@ layout = [
      sg.Text('folder not selected', size=(34, 1), font=('Arial', 20), text_color='blue', justification='left', key='-DISPLAY_FOLDER-'),
      sg.Input('-', size=(1, 1), enable_events=True, key='-SOURCE_FOLDER-', visible=False), sg.FolderBrowse()],
     [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('gpx file not selected', size=(60, 1), key='-GPX_FILE-'),
-     sg.Btn('Select', key='-SELECT_GPX_FILE-')],
+     sg.Text('gpx file not selected', size=(60, 1), key='-DISPLAY-GPX-'),
+     sg.Input('-', size=(1, 1), enable_events=True, key='-SELECT_GPX_FILE-', visible=False), sg.FileBrowse()],
     [sg.Frame('Data', layout=[[sg.Text('Photos:', size=(20, 1)), sg.Text('', size=(3, 1), key='-PHOTOS-'),
                                sg.Text('First Photo:', size=(20, 1)), sg.Text('', size=(20, 1), key='-FIRST_PHOTO-'),
                                sg.Text('Last Photo:', size=(20, 1)), sg.Text('', size=(20, 1), key='-LAST_PHOTO-')],
@@ -173,7 +155,7 @@ layout = [
              [sg.Btn('Display', disabled=True, key='-DISPLAY-'),
               sg.Btn('Calc Correction', disabled=True, key='-CALC_CORRECTION-'),
               sg.Btn('Apply', disabled=True, key='-APPLY_CORRECTION-')],
-             [sg.Image(size=(275, 275), background_color='light gray', key='-THUMBNAIL-')],
+             [sg.Image(size=(275, 275), background_color='dark gray', key='-THUMBNAIL-')],
              [sg.Btn('Write changes', disabled=True, key='-WRITE_CHANGES-')]])
      ],
     [sg.Btn('Exit', key='-EXIT-')]
@@ -202,19 +184,19 @@ while True:
             # Is there a gpx file in folder? - if so analyse it
             gpx_filespec = check_gpx(path)
             if not gpx_filespec == '':
-                window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
+                window['-DISPLAY-GPX-'].update(os.path.basename(gpx_filespec))
                 ml.load_photo_data(path, photo_data)
                 analyse_folder()
 
     elif event == '-SELECT_GPX_FILE-':
-        gpx_filespec = get_file()
+        gpx_filespec = values['-SELECT_GPX_FILE-']
         if not gpx_filespec == '':
             # Get filename from path and update window info
-            window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
+            window['-DISPLAY-GPX-'].update(os.path.basename(gpx_filespec))
             # Has a path already been selected - if so analyse it
             if not path == '':
                 clear_photo_data()
-                matchlocations.load_photo_data(path, photo_data)
+                ml.load_photo_data(path, photo_data)
                 analyse_folder()
 
     elif event == '-PHOTOLIST-':
