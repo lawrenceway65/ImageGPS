@@ -25,11 +25,6 @@ photo_data = []
 # The time correction to apply (seconds)
 correction = 0.0
 
-if os.name == 'nt':
-    path_sep = '\\'
-else:
-    path_sep = '/'
-
 
 def get_file():
     """Dialog to get gpx file, if not in selected folder.
@@ -131,13 +126,13 @@ def analyse_folder():
     window['-PHOTOLIST-'].update(display_list)
     window['-WRITE_CHANGES-'].update(disabled=False)
 
-    return
-
 
 def clear_photo_data():
+    """Reset all window fields"""
     photo_data.clear()
     correction = 0.0
 
+    window['-DISPLAY_FOLDER-'].update('')
     window['-GPX_FILE-'].update('')
     window['-PHOTOS-'].update('')
     window['-MATCHED-'].update('')
@@ -157,7 +152,8 @@ sg.theme('SystemDefault1')
 sg.SetOptions(font=('Arial', 12))
 layout = [
     [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Input('folder not selected', size=(60, 1), enable_events=True, key='-SOURCE_FOLDER-'), sg.FolderBrowse()],
+     sg.Text('folder not selected', size=(60, 1), auto_size_text=False, justification='left', key='-DISPLAY_FOLDER-'),
+     sg.Input('-', size=(1, 1), enable_events=True, key='-SOURCE_FOLDER-', visible=False), sg.FolderBrowse()],
     [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
      sg.Text('gpx file not selected', size=(60, 1), key='-GPX_FILE-'),
      sg.Btn('Select', key='-SELECT_GPX_FILE-')],
@@ -184,6 +180,7 @@ window = sg.Window('Match Locations', layout)
 latitude = 0.0
 longitude = 0.0
 
+# Main window event loop
 while True:
     event, values = window.read()
     print(event)
@@ -197,9 +194,9 @@ while True:
         if not path == '':
             # Get folder name from path and update window info
             dir_name = os.path.basename(path)
-            window['-SOURCE_FOLDER-'].update(os.path.basename(path))
+            window['-DISPLAY_FOLDER-'].update(os.path.basename(path))
 
-            # Is there a gpx file?
+            # Is there a gpx file in folder? - if so analyse it
             gpx_filespec = check_gpx(path)
             if not gpx_filespec == '':
                 window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
@@ -211,7 +208,7 @@ while True:
         if not gpx_filespec == '':
             # Get filename from path and update window info
             window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
-            # Has a path already been selected
+            # Has a path already been selected - if so analyse it
             if not path == '':
                 clear_photo_data()
                 matchlocations.load_photo_data(path, photo_data)
@@ -231,7 +228,7 @@ while True:
         window['-DISPLAY-'].update(disabled=False)
         window['-CORRECTION-'].update(disabled=False)
 
-        image = Image.open(path + path_sep + selected_photo.filename)
+        image = Image.open(path + os.sep + selected_photo.filename)
         image.thumbnail((275, 275))
         photo_img = ImageTk.PhotoImage(image)
         window['-THUMBNAIL-'].update(data=photo_img)
@@ -276,7 +273,7 @@ while True:
             window['-WRITE_CHANGES-'].update(disabled=True)
             # Write the changes
             ue.update_exif(path, gpx_filespec)
-            sg.popup_ok('Changes written to %d files.' % len(photo_data))
+            sg.popup_ok('Changes written %d files.' % len(photo_data))
 
     if latitude == 0.0 and longitude == 0.0:
         window['-CALC_CORRECTION-'].update(disabled=True)
