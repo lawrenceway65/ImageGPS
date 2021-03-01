@@ -149,10 +149,13 @@ def clear_photo_data():
 
 # Main window definition
 sg.theme('SystemDefault1')
-sg.SetOptions(font=('Arial', 12))
+sg.SetOptions(font=('Arial', 12),
+              background_color='light gray',
+              element_background_color='light gray',
+              text_element_background_color='light gray')
 layout = [
     [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('folder not selected', size=(60, 1), auto_size_text=False, justification='left', key='-DISPLAY_FOLDER-'),
+     sg.Text('folder not selected', size=(34, 1), font=('Arial', 20), text_color='blue', justification='left', key='-DISPLAY_FOLDER-'),
      sg.Input('-', size=(1, 1), enable_events=True, key='-SOURCE_FOLDER-', visible=False), sg.FolderBrowse()],
     [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
      sg.Text('gpx file not selected', size=(60, 1), key='-GPX_FILE-'),
