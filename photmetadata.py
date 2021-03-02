@@ -2,7 +2,6 @@
 from datetime import datetime
 import subprocess
 import json
-import PySimpleGUI as sg
 
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
@@ -58,8 +57,7 @@ class PhotoMetadata:
                                        self.longitude,
                                        osm_link,
                                        self.location)
-#        sg.Print(s)
-#        sg.popup_no_buttons(s, non_blocking=True, modal=True)
+        print(s)
         s += '\n'
         return s
 

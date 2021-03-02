@@ -109,6 +109,7 @@ def update_exif(path, gpx_filespec):
         # No valid data so return
         return
 
+    i = 0
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
@@ -119,6 +120,9 @@ def update_exif(path, gpx_filespec):
                 if record.filename == os.path.basename(entry.path):
                     break
 
+            sg.OneLineProgressMeter('Writing data', i, len(photos), orientation='h')
+            i += 1
+
             gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
 
 #            print('%s %s %f %f' % (record.filename, record.timestamp, record.latitude, record.longitude))
@@ -128,7 +132,6 @@ def update_exif(path, gpx_filespec):
             exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
             exif_dict.update(gps_dict)
             exif_bytes = piexif.dump(exif_dict)
-#            print(exif_bytes)
             jpeg_file = Image.open(entry.path)
             jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
 
@@ -138,14 +141,13 @@ def update_exif(path, gpx_filespec):
                      os.path.basename(entry.path),
                      original_time,
                      update_time))
-            sg.Print(log)
+            print(log)
             with open('%s/exif_update.log' % path, 'a') as logfile:
                 logfile.write(log + '\n')
 
+    sg.OneLineProgressMeterCancel()
 
 if __name__ == '__main__':
-    sg.Print = print
-
     gpx_filespec = ''
     for entry in os.scandir(path):
         if (entry.path.endswith(".gpx")):
