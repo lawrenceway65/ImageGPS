@@ -96,6 +96,7 @@ def analyse_folder():
     window['-LAST_PHOTO-'].update(set_data['last_photo'].strftime('%d:%m:%Y %H:%M:%S'))
     window['-GPX_START-'].update(set_data['first_gps'].strftime('%d:%m:%Y %H:%M:%S'))
     window['-GPX_END-'].update(set_data['last_gps'].strftime('%d:%m:%Y %H:%M:%S'))
+
     # Set colours according to match
     if time.localtime(set_data['first_photo'].timestamp()) < time.localtime(set_data['first_gps'].timestamp()):
         window['-FIRST_PHOTO-'].update(text_color='red')
@@ -214,9 +215,8 @@ while True:
 
     elif event == '-PHOTOLIST-':
         selected = values['-PHOTOLIST-']
-        for item in selected:
-            params = re.split(' ', item)
-            img_file = params[0]
+        # Only ever one item as it's single select, first token in string is filename
+        img_file = selected[0].split()[0]
         for item in photo_data:
             if item.filename == img_file:
                 selected_photo = item
