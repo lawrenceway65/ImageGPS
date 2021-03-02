@@ -7,10 +7,9 @@ from datetime import timedelta
 import time
 import os
 import piexif
-import re
-from fractions import Fraction
 from photmetadata import PhotoMetadata
-import photmetadata
+import PySimpleGUI as sg
+
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -59,8 +58,6 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photo_data):
                     # Found a match so update
-                    # print('Point: %s Photo(orig): %s Photo(corr): %s'
-                    # % (point.time, photo_data[photo_count].timestamp, corrected_time))
                     photo_data[photo_count].timestamp = corrected_time
                     photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
                     # Next one
@@ -82,14 +79,15 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                        photo_count,
                        len(photo_data)))
 
-    # filespec_split = re.split('/', gpx_filespec)
-    # gpx_filename = filespec_split[len(filespec_split)-1]
     gpx_filename = os.path.basename(gpx_filespec)
     with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
         csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
+        i = 0
         for record in photo_data:
+            sg.OneLineProgressMeter('Matching locations', i, len(photo_data), orientation='h')
+            i += 1
             csv_file.write(record.csv_output())
-
+        sg.OneLineProgressMeterCancel()
     return
 
 

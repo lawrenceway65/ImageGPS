@@ -1,6 +1,5 @@
 import PySimpleGUI as sg
 import matchlocations as ml
-import re
 import os
 import gpxpy
 import gpxpy.gpx
@@ -9,9 +8,6 @@ from PIL import Image, ImageTk
 import calculatecorrection
 import updateexif as ue
 import time
-
-from datetime import datetime
-from photmetadata import PhotoMetadata
 
 
 # Key data is global
@@ -82,8 +78,6 @@ def analyse_folder():
     """Match locations for the photo in the folder and update the window"""
     ml.match_locations(gpx_filespec, photo_data, path, correction)
     set_data = get_set_data(photo_data)
-    sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.'
-                % (set_data['photo_count'], set_data['matched_count']))
 
     # Get gpx data
     get_gpx_data(gpx_filespec, set_data)

@@ -58,7 +58,8 @@ class PhotoMetadata:
                                        self.longitude,
                                        osm_link,
                                        self.location)
-        sg.Print(s)
+#        sg.Print(s)
+#        sg.popup_no_buttons(s, non_blocking=True, modal=True)
         s += '\n'
         return s
 
