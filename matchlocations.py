@@ -39,8 +39,7 @@ def ProgressBar(progress, total, filename=''):
     """
     global window
     if window is None:
-        layout = [[sg.Text('Matching...')],
-                  [sg.Text('', size=(20,1), key='-COUNT-')],
+        layout = [[sg.Text('', size=(20,1), key='-COUNT-')],
                   [sg.Text('', size=(20,1), key='-PHOTO-')],
                   [sg.ProgressBar(total, orientation='h', size=(20, 20), border_width=1, relief='RELIEF_SUNKEN', key='-PROGRESS-')]
                   ]
