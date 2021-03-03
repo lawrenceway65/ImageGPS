@@ -9,7 +9,7 @@ import os
 import piexif
 from photmetadata import PhotoMetadata
 import PySimpleGUI as sg
-
+import progressmeter as pm
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -27,36 +27,6 @@ correction_seconds = 0
 hardcoded_correction = timedelta(0, correction_seconds)
 
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
-
-window = None
-
-
-def ProgressBar(progress, total, filename=''):
-    """Custom one line progress meter
-    :param progress: items processed
-    :param total: total items
-    :param filename: name of last file processed
-    """
-    global window
-    if window is None:
-        layout = [[sg.Text('', size=(20,1), key='-COUNT-')],
-                  [sg.Text('', size=(20,1), key='-PHOTO-')],
-                  [sg.ProgressBar(total, orientation='h', size=(20, 20), border_width=1, relief='RELIEF_SUNKEN', key='-PROGRESS-')]
-                  ]
-
-        # create the Window
-        window = sg.Window('Matching Locations', layout, modal=True)
-
-    event, values = window.read(timeout=0)
-    window['-COUNT-'].update('Photo %d of %d' % (progress, total))
-    window['-PHOTO-'].update(filename)
-    window['-PROGRESS-'].update_bar(progress)
-
-
-def ProgressBarDelete():
-    global window
-    window.close()
-    window = None
 
 
 def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
@@ -113,10 +83,10 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
         csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
         i = 0
         for record in photo_data:
-            ProgressBar(i, len(photo_data), record.filename)
+            pm.ProgressBar('Match Locations', i, len(photo_data), record.filename)
             i += 1
             csv_file.write(record.csv_output())
-        ProgressBarDelete()
+        pm.ProgressBarDelete()
 
 
 def get_photo_data(path, photo_data, gpx_file=''):

@@ -8,6 +8,7 @@ import piexif
 from fractions import Fraction
 from photmetadata import PhotoMetadata
 import PySimpleGUI as sg
+import progressmeter as pm
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -120,7 +121,8 @@ def update_exif(path, gpx_filespec):
                 if record.filename == os.path.basename(entry.path):
                     break
 
-            sg.OneLineProgressMeter('Writing data', i, len(photos), orientation='h')
+#            sg.OneLineProgressMeter('Writing data', i, len(photos), orientation='h')
+            pm.ProgressBar('Update files', i, len(photos), record.filename)
             i += 1
 
             gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
@@ -145,7 +147,8 @@ def update_exif(path, gpx_filespec):
             with open('%s/exif_update.log' % path, 'a') as logfile:
                 logfile.write(log + '\n')
 
-    sg.OneLineProgressMeterCancel()
+    pm.ProgressBarDelete()
+#    sg.OneLineProgressMeterCancel()
 
 if __name__ == '__main__':
     gpx_filespec = ''
