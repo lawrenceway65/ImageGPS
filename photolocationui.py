@@ -32,8 +32,8 @@ def get_set_data(photo_data):
         if item.point_found:
             matched_photos_count += 1
 
-    first_photo = photo_data[0].timestamp
-    last_photo = photo_data[len(photo_data)-1].timestamp
+    first_photo = photo_data[0].timestamp_corrected
+    last_photo = photo_data[len(photo_data)-1].timestamp_corrected
 
     set_data = {'photo_count': len(photo_data),
                 'matched_count': matched_photos_count,
@@ -109,7 +109,7 @@ def analyse_folder():
     display_list = []
     for item in photo_data:
         s = '  %s    %s    %2.3f    %2.3f' % (item.filename,
-                                       item.timestamp.strftime('%d:%m:%Y %H:%M:%S'),
+                                       item.timestamp_corrected.strftime('%d:%m:%Y %H:%M:%S'),
                                        item.latitude,
                                        item.longitude)
         display_list.append(s)
@@ -120,6 +120,7 @@ def analyse_folder():
 def clear_photo_data():
     """Reset all window fields"""
     photo_data.clear()
+    global correction
     correction = 0.0
 
     window['-PHOTOS-'].update('')

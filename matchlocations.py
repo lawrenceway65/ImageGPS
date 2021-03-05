@@ -52,18 +52,18 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
             for point in segment.points:
                 point_time = time.localtime(point.time.timestamp())
                 # Apply correction
-                corrected_time = photo_data[photo_count].timestamp + correction
+                corrected_time = photo_data[photo_count].timestamp_original + correction
                 photo_time = time.localtime(corrected_time.timestamp())
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photo_data):
                     # Found a match so update
-                    photo_data[photo_count].timestamp = corrected_time
+                    photo_data[photo_count].timestamp_corrected = corrected_time
                     photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
                     # Next one
                     photo_count += 1
                     if photo_count >= len(photo_data):
                         break
-                    photo_time = time.localtime(photo_data[photo_count].timestamp.timestamp())
+                    photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
 
                 if photo_count >= len(photo_data):
                     break
@@ -80,7 +80,7 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
 
     gpx_filename = os.path.basename(gpx_filespec)
     with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
-        csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
+        csv_file.write('Photo,Date/Time (orig),Date/Time (corrected),Lat,Long,Link,Location\n')
         i = 0
         for record in photo_data:
             pm.ProgressBar('Match Locations', i, len(photo_data), record.filename)

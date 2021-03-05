@@ -101,9 +101,9 @@ def update_exif(path, gpx_filespec):
             # Create record and add to list
             csv_data = re.split(',', line)
             rec = PhotoMetadata(csv_data[0],
-                                datetime.strptime(csv_data[1], "%d:%m:%Y %H:%M:%S"),
-                                float(csv_data[2]),
-                                float(csv_data[3]),)
+                                datetime.strptime(csv_data[2], "%d:%m:%Y %H:%M:%S"),
+                                float(csv_data[3]),
+                                float(csv_data[4]),)
             photos.append(rec)
 
     if len(photos) == 0:
@@ -129,7 +129,7 @@ def update_exif(path, gpx_filespec):
 
 #            print('%s %s %f %f' % (record.filename, record.timestamp, record.latitude, record.longitude))
             # Write the data
-            update_time = datetime.strftime(record.timestamp, "%Y:%m:%d %H:%M:%S")
+            update_time = datetime.strftime(record.timestamp_corrected, "%Y:%m:%d %H:%M:%S")
             exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
             exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
             exif_dict.update(gps_dict)
