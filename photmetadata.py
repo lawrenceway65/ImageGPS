@@ -50,6 +50,7 @@ class PhotoMetadata:
         self.longitude = 0.0
         self.elevation = 0.0
         self.point_found = False
+        self.location = ''
 
     def csv_output(self):
         """:return string for csv file"""
