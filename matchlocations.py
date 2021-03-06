@@ -42,11 +42,32 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
     photo_count = 0
     correction = timedelta(0, correction_seconds)
 
+    # Reset data
+    for item in photo_data:
+        item.timestamp_corrected = item.timestamp_original
+        item.reset_gps()
+
     with open(gpx_filespec, 'r') as file:
         gpx_data = file.read()
-
-    # Parse to gpx and iterate through
     input_gpx = gpxpy.parse(gpx_data)
+
+    # Ignore photos before start of track
+    for track in input_gpx.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                point_time = time.localtime(point.time.timestamp())
+                # Apply correction
+                corrected_time = photo_data[photo_count].timestamp_original + correction
+                photo_time = time.localtime(corrected_time.timestamp())
+                # Find first photo after start of gpx track
+                while point_time > photo_time and photo_count < len(photo_data):
+                    photo_count += 1
+                    corrected_time = photo_data[photo_count].timestamp_original + correction
+                    photo_time = time.localtime(corrected_time.timestamp())
+                break
+
+    print('Count: %d, Total %d' % (photo_count, len(photo_data)))
+    # Parse to gpx and iterate through remaining photos
     for track in input_gpx.tracks:
         for segment in track.segments:
             for point in segment.points:

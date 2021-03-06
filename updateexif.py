@@ -98,13 +98,14 @@ def update_exif(path, gpx_filespec):
     with open(gpx_filespec.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
         header_line = csv_file.readline()
         for line in csv_file:
-            # Create record and add to list
+            # Create record and add to list if matched
             csv_data = re.split(',', line)
-            rec = PhotoMetadata(csv_data[0],
-                                datetime.strptime(csv_data[2], "%d:%m:%Y %H:%M:%S"),
-                                float(csv_data[3]),
-                                float(csv_data[4]),)
-            photos.append(rec)
+            if csv_data[5] != 'n/a':
+                rec = PhotoMetadata(csv_data[0],
+                                    datetime.strptime(csv_data[2], "%d:%m:%Y %H:%M:%S"),
+                                    float(csv_data[3]),
+                                    float(csv_data[4]),)
+                photos.append(rec)
 
     if len(photos) == 0:
         # No valid data so return

@@ -109,12 +109,13 @@ def analyse_folder():
     display_list = []
     for item in photo_data:
         s = '  %s    %s    %2.3f    %2.3f' % (item.filename,
-                                       item.timestamp_corrected.strftime('%d:%m:%Y %H:%M:%S'),
-                                       item.latitude,
-                                       item.longitude)
+                                              item.timestamp_corrected.strftime('%d:%m:%Y %H:%M:%S'),
+                                              item.latitude,
+                                              item.longitude)
         display_list.append(s)
     window['-PHOTOLIST-'].update(display_list)
     window['-WRITE_CHANGES-'].update(disabled=False)
+    window['-CORRECTION-'].update(disabled=False)
 
 
 def clear_photo_data():
@@ -219,7 +220,6 @@ while True:
         window['-LAT-'].update(selected_photo.latitude)
         window['-LONG-'].update(selected_photo.longitude)
         window['-DISPLAY-'].update(disabled=False)
-        window['-CORRECTION-'].update(disabled=False)
 
         image = Image.open(path + os.sep + selected_photo.filename)
         image.thumbnail((275, 275))

@@ -44,6 +44,13 @@ class PhotoMetadata:
         self.elevation = elev
         self.point_found = True
 
+    def reset_gps(self):
+        """Reset GPS data"""
+        self.latitude = 0.0
+        self.longitude = 0.0
+        self.elevation = 0.0
+        self.point_found = False
+
     def csv_output(self):
         """:return string for csv file"""
         if self.point_found:
