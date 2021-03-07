@@ -87,22 +87,11 @@ def create_gps_dict(lat, long, elevation):
 # End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
 
 
-def file_has_gps(jpeg_file):
-    """Check if file contains gps exif info
-    :param jpeg_file: File to check
-    :return True if contains gps data, otherwise False
-    """
-    exif_dict = piexif.load(jpeg_file)
-    if exif_dict['GPS']:
-        return True
-    else:
-        return False
-
-
 def update_exif(path, gpx_filespec):
     """Update exif info in files
     :type path: str
     :type gpx_filespec: str
+    :return count of photos updated
     """
     photos = []
 
@@ -121,53 +110,47 @@ def update_exif(path, gpx_filespec):
 
     if len(photos) == 0:
         # No valid data so return
-        return
+        return 0
 
-    i = 0
+    photos_updated = 0
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
             original_time = exif_dict['Exif'][DateTimeOriginal].decode()
-            gps = exif_dict['GPS']
-            if gps:
-                print('%s has gps info' % os.path.basename(entry.path))
-            else:
-                print('%s has no gps info' % os.path.basename(entry.path))
 
             # Find the photo in the list
-            found = False
             for record in photos:
                 if record.filename == os.path.basename(entry.path):
-                    found = True
+                    pm.ProgressBar('Update files', photos_updated, len(photos), record.filename)
+                    photos_updated += 1
+
+                    gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
+
+                    # Write the data
+                    update_time = datetime.strftime(record.timestamp_corrected, "%Y:%m:%d %H:%M:%S")
+                    exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
+                    exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
+                    exif_dict.update(gps_dict)
+                    exif_bytes = piexif.dump(exif_dict)
+                    jpeg_file = Image.open(entry.path)
+                    jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
+
+                    # Output a log - need to record when we do this
+                    log = ('%s :%s exif updated. Original: %s New: %s'
+                          % (datetime.strftime(datetime.now(), "%Y:%m:%d %H:%M:%S"),
+                             os.path.basename(entry.path),
+                             original_time,
+                             update_time))
+                    # print(log)
+                    with open('%s/exif_update.log' % path, 'a') as logfile:
+                        logfile.write(log + '\n')
+
+                    # Found and updated so no need to search further
                     break
 
-            if found:
-                pm.ProgressBar('Update files', i, len(photos), record.filename)
-                i += 1
-
-                gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
-
-    #            print('%s %s %f %f' % (record.filename, record.timestamp, record.latitude, record.longitude))
-                # Write the data
-                update_time = datetime.strftime(record.timestamp_corrected, "%Y:%m:%d %H:%M:%S")
-                exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
-                exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
-                exif_dict.update(gps_dict)
-                exif_bytes = piexif.dump(exif_dict)
-                jpeg_file = Image.open(entry.path)
-                jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
-
-                # Output a log - need to record when we do this
-                log = ('%s :%s exif updated. Original: %s New: %s'
-                      % (datetime.strftime(datetime.now(), "%Y:%m:%d %H:%M:%S"),
-                         os.path.basename(entry.path),
-                         original_time,
-                         update_time))
-                print(log)
-                with open('%s/exif_update.log' % path, 'a') as logfile:
-                    logfile.write(log + '\n')
-
     pm.ProgressBarDelete()
+
+    return photos_updated
 
 
 if __name__ == '__main__':

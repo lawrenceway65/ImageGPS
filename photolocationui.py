@@ -96,14 +96,20 @@ def analyse_folder():
         window['-FIRST_PHOTO-'].update(text_color='red')
     else:
         window['-FIRST_PHOTO-'].update(text_color='green')
+
     if time.localtime(set_data['last_photo'].timestamp()) > time.localtime(set_data['last_gps'].timestamp()):
         window['-LAST_PHOTO-'].update(text_color='red')
     else:
         window['-LAST_PHOTO-'].update(text_color='green')
+
     if set_data['photo_count'] == set_data['matched_count']:
         window['-MATCHED-'].update(text_color='green')
     else:
         window['-MATCHED-'].update(text_color='red')
+
+    if set_data['matched_count'] == 0:
+        window['-FIRST_PHOTO-'].update(text_color='red')
+        window['-LAST_PHOTO-'].update(text_color='red')
 
     # Display list of photos
     display_list = []
@@ -223,7 +229,6 @@ while True:
         window['-DISPLAY-'].update(disabled=False)
 
         with Image.open(path + os.sep + selected_photo.filename) as image:
-#        image = Image.open(path + os.sep + selected_photo.filename)
             image.thumbnail((275, 275))
             photo_img = ImageTk.PhotoImage(image)
             window['-THUMBNAIL-'].update(data=photo_img)
@@ -268,8 +273,8 @@ while True:
             # Disable button so can't do it twice
             window['-WRITE_CHANGES-'].update(disabled=True)
             # Write the changes
-            ue.update_exif(path, gpx_filespec)
-            sg.popup_ok('Changes written %d files.' % len(photo_data))
+            i = ue.update_exif(path, gpx_filespec)
+            sg.popup_ok('Changes written to %d files.' % i)
 
     if latitude == 0.0 and longitude == 0.0:
         window['-CALC_CORRECTION-'].update(disabled=True)

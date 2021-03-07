@@ -67,7 +67,7 @@ class PhotoMetadata:
                                        self.longitude,
                                        osm_link,
                                        self.location)
-        print(s)
+#        print(s)
         s += '\n'
         return s
 
