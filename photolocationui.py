@@ -222,10 +222,12 @@ while True:
         window['-LONG-'].update(selected_photo.longitude)
         window['-DISPLAY-'].update(disabled=False)
 
-        image = Image.open(path + os.sep + selected_photo.filename)
-        image.thumbnail((275, 275))
-        photo_img = ImageTk.PhotoImage(image)
-        window['-THUMBNAIL-'].update(data=photo_img)
+        with Image.open(path + os.sep + selected_photo.filename) as image:
+#        image = Image.open(path + os.sep + selected_photo.filename)
+            image.thumbnail((275, 275))
+            photo_img = ImageTk.PhotoImage(image)
+            window['-THUMBNAIL-'].update(data=photo_img)
+
 
     elif event == '-DISPLAY-':
         webbrowser.open_new_tab(selected_photo.get_osm_link())

@@ -57,28 +57,26 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
             for point in segment.points:
                 point_time = time.localtime(point.time.timestamp())
                 # Apply correction
-                corrected_time = photo_data[photo_count].timestamp_original + correction
-                photo_time = time.localtime(corrected_time.timestamp())
+                photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
                 # Find first photo after start of gpx track
                 while point_time > photo_time and photo_count < len(photo_data):
                     photo_count += 1
-                    corrected_time = photo_data[photo_count].timestamp_original + correction
-                    photo_time = time.localtime(corrected_time.timestamp())
+                    photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                    photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
                 break
 
-    print('Count: %d, Total %d' % (photo_count, len(photo_data)))
     # Parse to gpx and iterate through remaining photos
     for track in input_gpx.tracks:
         for segment in track.segments:
             for point in segment.points:
                 point_time = time.localtime(point.time.timestamp())
                 # Apply correction
-                corrected_time = photo_data[photo_count].timestamp_original + correction
-                photo_time = time.localtime(corrected_time.timestamp())
+                photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photo_data):
                     # Found a match so update
-                    photo_data[photo_count].timestamp_corrected = corrected_time
                     photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
                     # Next one
                     photo_count += 1
