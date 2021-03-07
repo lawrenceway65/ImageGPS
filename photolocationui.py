@@ -150,12 +150,16 @@ sg.SetOptions(font=('Arial', 12),
               element_background_color='light gray',
               text_element_background_color='light gray')
 layout = [
+    [sg.Col([
     [sg.Text('Photo Folder', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('folder not selected', size=(35, 1), font=('Arial', 20), text_color='blue', justification='left', key='-DISPLAY_FOLDER-'),
-     sg.Input('-', size=(1, 1), enable_events=True, key='-SOURCE_FOLDER-', visible=False), sg.FolderBrowse()],
+     sg.Text('folder not selected', size=(35, 1), font=('Arial', 20), text_color='blue', justification='left', key='-DISPLAY_FOLDER-')],
     [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('file not selected', size=(60, 1), key='-DISPLAY-GPX-'),
-     sg.Input('-', size=(1, 1), enable_events=True, key='-SELECT_GPX_FILE-', visible=False), sg.FileBrowse()],
+     sg.Text('file not selected', size=(50, 1), key='-DISPLAY-GPX-')]]),
+    sg.Col([
+        [sg.Input('-', justification='left', size=(1, 1), enable_events=True, key='-SOURCE_FOLDER-', visible=False),
+        sg.FolderBrowse('Select Folder',size=(14,1))],
+        [sg.Input('-', justification='left', size=(1, 1), enable_events=True, key='-SELECT_GPX_FILE-', visible=False),
+        sg.FileBrowse('Select File', size=(14,1))]])],
     [sg.Frame('Data', layout=[[sg.Text('Photos:', size=(15, 1)), sg.Text('', size=(3, 1), key='-PHOTOS-'),
                                sg.Text('GPX Start:', size=(15, 1)), sg.Text('', size=(15, 1), key='-GPX_START-'),
                                sg.Text('GPX End:', size=(15, 1)), sg.Text('', size=(15, 1), key='-GPX_END-')],

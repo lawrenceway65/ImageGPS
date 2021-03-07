@@ -146,17 +146,18 @@ def get_photo_data(path, photo_data, gpx_file=''):
     return len(photo_data)
 
 
-def load_photo_data(path, photo_data):
+def load_photo_data(path, photo_data, load_image_with_gps=False):
     """Build list photos with date taken from exif metadata
     :type path: str
     :type photo_data: list of PhotoMetaData
+    :param load_image_with_gps: flag if files that already have gps info are loaded
     """
     # Build list of photos
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
             # Only photos without GPS data already
-            if not exif_dict['GPS']:
+            if not exif_dict['GPS'] or load_image_with_gps:
                 photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
                 rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
                 photo_data.append(rec)
