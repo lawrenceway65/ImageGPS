@@ -208,6 +208,8 @@ while True:
                 ml.load_photo_data(path, photo_data)
                 if len(photo_data) > 0:
                     analyse_folder()
+                else:
+                    sg.PopupCancel('All photos already have gps data')
 
     elif event == '-SELECT_GPX_FILE-':
         gpx_filespec = values['-SELECT_GPX_FILE-']

@@ -19,7 +19,7 @@ def ProgressBar(window_title, progress, total, filename=''):
                   ]
 
         # create the Window
-        window = sg.Window(window_title, layout, modal=True)
+        window = sg.Window(window_title, layout, modal=True, keep_on_top=True)
 
     event, values = window.read(timeout=0)
     window['-COUNT-'].update('Photo %d of %d' % (progress, total))
