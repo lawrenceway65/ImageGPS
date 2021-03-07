@@ -2,7 +2,6 @@
 from datetime import datetime
 import subprocess
 import json
-import PySimpleGUI as sg
 
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
@@ -16,7 +15,8 @@ class PhotoMetadata:
         """
 #        print('Add %s' % filename)
         self.filename = filename
-        self.timestamp = timestamp
+        self.timestamp_original = timestamp
+        self.timestamp_corrected = timestamp
         self.latitude = latitude
         self.longitude = longitude
         self.elevation = elevation
@@ -25,7 +25,7 @@ class PhotoMetadata:
 
     def __lt__(self, other):
         """Default sort is by timestamp"""
-        return self.timestamp < other.timestamp
+        return self.timestamp_original < other.timestamp_original
 
     def get_osm_link(self):
         if self.point_found:
@@ -44,6 +44,14 @@ class PhotoMetadata:
         self.elevation = elev
         self.point_found = True
 
+    def reset_gps(self):
+        """Reset GPS data"""
+        self.latitude = 0.0
+        self.longitude = 0.0
+        self.elevation = 0.0
+        self.point_found = False
+        self.location = ''
+
     def csv_output(self):
         """:return string for csv file"""
         if self.point_found:
@@ -52,13 +60,14 @@ class PhotoMetadata:
         else:
             osm_link = 'n/a'
             address = 'not found'
-        s = '%s,%s,%f,%f,"%s","%s"' % (self.filename,
-                                       self.timestamp.strftime('%d:%m:%Y %H:%M:%S'),
+        s = '%s,%s,%s,%f,%f,"%s","%s"' % (self.filename,
+                                       self.timestamp_original.strftime('%d:%m:%Y %H:%M:%S'),
+                                       self.timestamp_corrected.strftime('%d:%m:%Y %H:%M:%S'),
                                        self.latitude,
                                        self.longitude,
                                        osm_link,
                                        self.location)
-        sg.Print(s)
+#        print(s)
         s += '\n'
         return s
 

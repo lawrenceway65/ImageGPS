@@ -8,6 +8,7 @@ import piexif
 from fractions import Fraction
 from photmetadata import PhotoMetadata
 import PySimpleGUI as sg
+import progressmeter as pm
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -90,6 +91,7 @@ def update_exif(path, gpx_filespec):
     """Update exif info in files
     :type path: str
     :type gpx_filespec: str
+    :return count of photos updated
     """
     photos = []
 
@@ -97,18 +99,20 @@ def update_exif(path, gpx_filespec):
     with open(gpx_filespec.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
         header_line = csv_file.readline()
         for line in csv_file:
-            # Create record and add to list
+            # Create record and add to list if matched
             csv_data = re.split(',', line)
-            rec = PhotoMetadata(csv_data[0],
-                                datetime.strptime(csv_data[1], "%d:%m:%Y %H:%M:%S"),
-                                float(csv_data[2]),
-                                float(csv_data[3]),)
-            photos.append(rec)
+            if float(csv_data[4]) != 0:
+                rec = PhotoMetadata(csv_data[0],
+                                    datetime.strptime(csv_data[2], "%d:%m:%Y %H:%M:%S"),
+                                    float(csv_data[3]),
+                                    float(csv_data[4]),)
+                photos.append(rec)
 
     if len(photos) == 0:
         # No valid data so return
-        return
+        return 0
 
+    photos_updated = 0
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
@@ -117,35 +121,39 @@ def update_exif(path, gpx_filespec):
             # Find the photo in the list
             for record in photos:
                 if record.filename == os.path.basename(entry.path):
+                    pm.ProgressBar('Update files', photos_updated, len(photos), record.filename)
+                    photos_updated += 1
+
+                    gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
+
+                    # Write the data
+                    update_time = datetime.strftime(record.timestamp_corrected, "%Y:%m:%d %H:%M:%S")
+                    exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
+                    exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
+                    exif_dict.update(gps_dict)
+                    exif_bytes = piexif.dump(exif_dict)
+                    jpeg_file = Image.open(entry.path)
+                    jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
+
+                    # Output a log - need to record when we do this
+                    log = ('%s :%s exif updated. Original: %s New: %s'
+                          % (datetime.strftime(datetime.now(), "%Y:%m:%d %H:%M:%S"),
+                             os.path.basename(entry.path),
+                             original_time,
+                             update_time))
+                    # print(log)
+                    with open('%s/exif_update.log' % path, 'a') as logfile:
+                        logfile.write(log + '\n')
+
+                    # Found and updated so no need to search further
                     break
 
-            gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
+    pm.ProgressBarDelete()
 
-#            print('%s %s %f %f' % (record.filename, record.timestamp, record.latitude, record.longitude))
-            # Write the data
-            update_time = datetime.strftime(record.timestamp, "%Y:%m:%d %H:%M:%S")
-            exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
-            exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
-            exif_dict.update(gps_dict)
-            exif_bytes = piexif.dump(exif_dict)
-#            print(exif_bytes)
-            jpeg_file = Image.open(entry.path)
-            jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
-
-            # Output a log - need to record when we do this
-            log = ('%s :%s exif updated. Original: %s New: %s'
-                  % (datetime.strftime(datetime.now(), "%Y:%m:%d %H:%M:%S"),
-                     os.path.basename(entry.path),
-                     original_time,
-                     update_time))
-            sg.Print(log)
-            with open('%s/exif_update.log' % path, 'a') as logfile:
-                logfile.write(log + '\n')
+    return photos_updated
 
 
 if __name__ == '__main__':
-    sg.Print = print
-
     gpx_filespec = ''
     for entry in os.scandir(path):
         if (entry.path.endswith(".gpx")):

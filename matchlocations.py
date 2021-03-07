@@ -7,10 +7,9 @@ from datetime import timedelta
 import time
 import os
 import piexif
-import re
-from fractions import Fraction
 from photmetadata import PhotoMetadata
-import photmetadata
+import PySimpleGUI as sg
+import progressmeter as pm
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -30,7 +29,6 @@ hardcoded_correction = timedelta(0, correction_seconds)
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
 
 
-
 def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
     """For each photo record, find the co-ordinates for the matching time from the gpx data
     If a correction is set apply it to the photo time (for when camera time was set wrong).
@@ -44,30 +42,47 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
     photo_count = 0
     correction = timedelta(0, correction_seconds)
 
+    # Reset data
+    for item in photo_data:
+        item.timestamp_corrected = item.timestamp_original
+        item.reset_gps()
+
     with open(gpx_filespec, 'r') as file:
         gpx_data = file.read()
-
-    # Parse to gpx and iterate through
     input_gpx = gpxpy.parse(gpx_data)
+
+    # Ignore photos before start of track
     for track in input_gpx.tracks:
         for segment in track.segments:
             for point in segment.points:
                 point_time = time.localtime(point.time.timestamp())
                 # Apply correction
-                corrected_time = photo_data[photo_count].timestamp + correction
-                photo_time = time.localtime(corrected_time.timestamp())
+                photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
+                # Find first photo after start of gpx track
+                while point_time > photo_time and photo_count < len(photo_data):
+                    photo_count += 1
+                    photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                    photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
+                break
+
+    # Parse to gpx and iterate through remaining photos
+    for track in input_gpx.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                point_time = time.localtime(point.time.timestamp())
+                # Apply correction
+                photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
                 # May be many photos at one point
                 while point_time > photo_time and photo_count < len(photo_data):
                     # Found a match so update
-                    # print('Point: %s Photo(orig): %s Photo(corr): %s'
-                    # % (point.time, photo_data[photo_count].timestamp, corrected_time))
-                    photo_data[photo_count].timestamp = corrected_time
                     photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
                     # Next one
                     photo_count += 1
                     if photo_count >= len(photo_data):
                         break
-                    photo_time = time.localtime(photo_data[photo_count].timestamp.timestamp())
+                    photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
 
                 if photo_count >= len(photo_data):
                     break
@@ -82,15 +97,15 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                        photo_count,
                        len(photo_data)))
 
-    # filespec_split = re.split('/', gpx_filespec)
-    # gpx_filename = filespec_split[len(filespec_split)-1]
     gpx_filename = os.path.basename(gpx_filespec)
     with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
-        csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
+        csv_file.write('Photo,Date/Time (orig),Date/Time (corrected),Lat,Long,Link,Location\n')
+        i = 0
         for record in photo_data:
+            pm.ProgressBar('Match Locations', i, len(photo_data), record.filename)
+            i += 1
             csv_file.write(record.csv_output())
-
-    return
+        pm.ProgressBarDelete()
 
 
 def get_photo_data(path, photo_data, gpx_file=''):
@@ -104,9 +119,11 @@ def get_photo_data(path, photo_data, gpx_file=''):
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
-            photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
-            rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
-            photo_data.append(rec)
+            # Only photos without GPS data already
+            if not exif_dict['GPS']:
+                photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+                rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
+                photo_data.append(rec)
     # Sort list by date/time
     photo_data.sort()
 
@@ -129,18 +146,21 @@ def get_photo_data(path, photo_data, gpx_file=''):
     return len(photo_data)
 
 
-def load_photo_data(path, photo_data):
+def load_photo_data(path, photo_data, load_image_with_gps=False):
     """Build list photos with date taken from exif metadata
     :type path: str
     :type photo_data: list of PhotoMetaData
+    :param load_image_with_gps: flag if files that already have gps info are loaded
     """
     # Build list of photos
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
-            photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
-            rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
-            photo_data.append(rec)
+            # Only photos without GPS data already
+            if not exif_dict['GPS'] or load_image_with_gps:
+                photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+                rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
+                photo_data.append(rec)
     # Sort list by date/time
     photo_data.sort()
 

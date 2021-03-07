@@ -14,6 +14,7 @@ import json
 
 
 class PointList:
+    """Can be used for debug if issues with matching"""
     def __init__(self):
         self.min = 99999
         self.point_list = []
@@ -40,19 +41,6 @@ class PointList:
             rec = (distance, point.latitude, point.longitude, correction)
             self.point_list.append(rec)
 
-        # if distance < self.min:
-        #     rec = (distance, point.latitude, point.longitude, correction)
-        #     self.point_list.append(rec)
-        #     self.min = distance
-        #     self.getting_closer = True
-        #     if len(self.point_list) > 5:
-        #         self.point_list.pop(0)
-        # else:
-        #     self.getting_closer = False
-        #     if len(self.point_list) < 10:
-        #         rec = (distance, point.latitude, point.longitude, correction)
-        #         self.point_list.append(rec)
-        # print(len(self.point_list))
 
     def print_list(self):
         for rec in self.point_list:

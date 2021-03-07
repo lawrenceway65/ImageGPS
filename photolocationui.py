@@ -1,6 +1,5 @@
 import PySimpleGUI as sg
-import matchlocations
-import re
+import matchlocations as ml
 import os
 import gpxpy
 import gpxpy.gpx
@@ -8,9 +7,7 @@ import webbrowser
 from PIL import Image, ImageTk
 import calculatecorrection
 import updateexif as ue
-
-from datetime import datetime
-from photmetadata import PhotoMetadata
+import time
 
 
 # Key data is global
@@ -25,29 +22,6 @@ photo_data = []
 # The time correction to apply (seconds)
 correction = 0.0
 
-if os.name == 'nt':
-    path_sep = '\\'
-else:
-    path_sep = '/'
-
-
-def get_file():
-    """Dialog to get gpx file, if not in selected folder.
-    :return str file name / path
-    """
-    layout = [[sg.Text('GPX File - Select File')],
-            [sg.Input(), sg.FileBrowse()],
-            [sg.OK(), sg.Cancel()]]
-
-    window = sg.Window('Select track file', layout)
-
-    event, values = window.read()
-    window.close()
-    if event == 'OK':
-        return values[0]
-    else:
-        return ''
-
 
 def get_set_data(photo_data):
     """Get data pertaining to set of photos. Return as dictionary
@@ -58,8 +32,8 @@ def get_set_data(photo_data):
         if item.point_found:
             matched_photos_count += 1
 
-    first_photo = photo_data[0].timestamp
-    last_photo = photo_data[len(photo_data)-1].timestamp
+    first_photo = photo_data[0].timestamp_corrected
+    last_photo = photo_data[len(photo_data)-1].timestamp_corrected
 
     set_data = {'photo_count': len(photo_data),
                 'matched_count': matched_photos_count,
@@ -72,7 +46,7 @@ def get_set_data(photo_data):
 
 
 def check_gpx(path):
-    # Check for GPX file
+    """Check if GPX file present in selected folder"""
     for entry in os.scandir(path):
         if (entry.path.endswith(".gpx")):
             return entry.path
@@ -81,7 +55,10 @@ def check_gpx(path):
 
 
 def get_gpx_data(gpx_file, set_data):
-    """Set first and last gpx point"""
+    """Get first and last gpx point and update in set data
+    :param gpx_file: gpx filespec
+    :param set_data: data to update
+    """
     with open(gpx_file, 'r') as file:
         gpx_data = file.read()
         input_gpx = gpxpy.parse(gpx_data)
@@ -98,21 +75,13 @@ def get_gpx_data(gpx_file, set_data):
 
 
 def analyse_folder():
-
-    # Remove items from list in case it is second time around
-
-    matchlocations.match_locations(gpx_filespec, photo_data, path, correction)
+    """Match locations for the photo in the folder and update the window"""
+    ml.match_locations(gpx_filespec, photo_data, path, correction)
     set_data = get_set_data(photo_data)
-    sg.popup_ok('Photo Location analysis complete, %d photos checked, %d matched.' % (
-    set_data['photo_count'], set_data['matched_count']))
 
     # Get gpx data
     get_gpx_data(gpx_filespec, set_data)
-    # Get filename from path and update window info
-    # path_list = re.split(path_sep, gpx_filespec)
-    # gpx_file = path_list[len(path_list) - 1]
     gpx_file = os.path.basename(gpx_filespec)
-    window['-GPX_FILE-'].update(gpx_file)
 
     # Update window info
     window['-PHOTOS-'].update('%d' % set_data['photo_count'])
@@ -122,25 +91,45 @@ def analyse_folder():
     window['-GPX_START-'].update(set_data['first_gps'].strftime('%d:%m:%Y %H:%M:%S'))
     window['-GPX_END-'].update(set_data['last_gps'].strftime('%d:%m:%Y %H:%M:%S'))
 
+    # Set colours according to match
+    if time.localtime(set_data['first_photo'].timestamp()) < time.localtime(set_data['first_gps'].timestamp()):
+        window['-FIRST_PHOTO-'].update(text_color='red')
+    else:
+        window['-FIRST_PHOTO-'].update(text_color='green')
+
+    if time.localtime(set_data['last_photo'].timestamp()) > time.localtime(set_data['last_gps'].timestamp()):
+        window['-LAST_PHOTO-'].update(text_color='red')
+    else:
+        window['-LAST_PHOTO-'].update(text_color='green')
+
+    if set_data['photo_count'] == set_data['matched_count']:
+        window['-MATCHED-'].update(text_color='green')
+    else:
+        window['-MATCHED-'].update(text_color='red')
+
+    if set_data['matched_count'] == 0:
+        window['-FIRST_PHOTO-'].update(text_color='red')
+        window['-LAST_PHOTO-'].update(text_color='red')
+
     # Display list of photos
     display_list = []
     for item in photo_data:
-        s = '%s   %s   %2.3f %2.3f' % (item.filename,
-                                       item.timestamp.strftime('%d:%m:%Y %H:%M:%S'),
-                                       item.latitude,
-                                       item.longitude)
+        s = '  %s    %s    %2.3f    %2.3f' % (item.filename,
+                                              item.timestamp_corrected.strftime('%d:%m:%Y %H:%M:%S'),
+                                              item.latitude,
+                                              item.longitude)
         display_list.append(s)
     window['-PHOTOLIST-'].update(display_list)
     window['-WRITE_CHANGES-'].update(disabled=False)
-
-    return
+    window['-CORRECTION-'].update(disabled=False)
 
 
 def clear_photo_data():
+    """Reset all window fields"""
     photo_data.clear()
+    global correction
     correction = 0.0
 
-    window['-GPX_FILE-'].update('')
     window['-PHOTOS-'].update('')
     window['-MATCHED-'].update('')
     window['-FIRST_PHOTO-'].update('')
@@ -156,36 +145,45 @@ def clear_photo_data():
 
 # Main window definition
 sg.theme('SystemDefault1')
-sg.SetOptions(font=('Arial', 12))
+sg.SetOptions(font=('Arial', 12),
+              background_color='light gray',
+              element_background_color='light gray',
+              text_element_background_color='light gray')
 layout = [
-    [sg.Text('Folder', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Input('folder not selected', size=(60, 1), enable_events=True, key='-SOURCE_FOLDER-'), sg.FolderBrowse()],
+    [sg.Col([
+    [sg.Text('Photo Folder', size=(15, 1), auto_size_text=False, justification='left'),
+     sg.Text('folder not selected', size=(35, 1), font=('Arial', 20), text_color='blue', justification='left', key='-DISPLAY_FOLDER-')],
     [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('gpx file not selected', size=(60, 1), key='-GPX_FILE-'),
-     sg.Btn('Select', key='-SELECT_GPX_FILE-')],
-    [sg.Frame('Data', layout=[[sg.Text('Photos:', size=(20, 1)), sg.Text('', size=(3, 1), key='-PHOTOS-'),
-                               sg.Text('First Photo:', size=(20, 1)), sg.Text('', size=(20, 1), key='-FIRST_PHOTO-'),
-                               sg.Text('Last Photo:', size=(20, 1)), sg.Text('', size=(20, 1), key='-LAST_PHOTO-')],
-                              [sg.Text('Matched Photos:', size=(20, 1)), sg.Text('', size=(3, 1), key='-MATCHED-'),
-                               sg.Text('GPX Start:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_START-'),
-                               sg.Text('GPX End:', size=(20, 1)), sg.Text('', size=(20, 1), key='-GPX_END-')]])],
-    [sg.Listbox(values=[' '], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, size=(75, 20), key='-PHOTOLIST-'),
+     sg.Text('file not selected', size=(50, 1), key='-DISPLAY-GPX-')]]),
+    sg.Col([
+        [sg.Input('-', justification='left', size=(1, 1), enable_events=True, key='-SOURCE_FOLDER-', visible=False),
+        sg.FolderBrowse('Select Folder',size=(14,1))],
+        [sg.Input('-', justification='left', size=(1, 1), enable_events=True, key='-SELECT_GPX_FILE-', visible=False),
+        sg.FileBrowse('Select File', size=(14,1))]])],
+    [sg.Frame('Data', layout=[[sg.Text('Photos:', size=(15, 1)), sg.Text('', size=(3, 1), key='-PHOTOS-'),
+                               sg.Text('GPX Start:', size=(15, 1)), sg.Text('', size=(15, 1), key='-GPX_START-'),
+                               sg.Text('GPX End:', size=(15, 1)), sg.Text('', size=(15, 1), key='-GPX_END-')],
+                              [sg.Text('Matched Photos:', size=(15, 1)), sg.Text('', size=(3, 1), key='-MATCHED-'),
+                               sg.Text('First Photo:', size=(15, 1)), sg.Text('', size=(15, 1), key='-FIRST_PHOTO-'),
+                               sg.Text('Last Photo:', size=(15, 1)), sg.Text('', size=(15, 1), key='-LAST_PHOTO-')]])],
+    [sg.Listbox(values=[' '], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, size=(55, 25), key='-PHOTOLIST-'),
      sg.Col([[sg.Text('Latitude:', size=(10, 1)), sg.Input('', size=(15, 1), enable_events=True, key='-LAT-')],
              [sg.Text('Longitude:', size=(10, 1)), sg.Input('', size=(15, 1), enable_events=True, key='-LONG-')],
              [sg.Text('Correction:', size=(10, 1)), sg.Input('0', disabled=True, size=(10, 1), enable_events=True, key='-CORRECTION-')],
              [sg.Btn('Display', disabled=True, key='-DISPLAY-'),
               sg.Btn('Calc Correction', disabled=True, key='-CALC_CORRECTION-'),
               sg.Btn('Apply', disabled=True, key='-APPLY_CORRECTION-')],
-             [sg.Image(size=(275, 275), background_color='light gray', key='-THUMBNAIL-')],
+             [sg.Image(size=(275, 275), background_color='dark gray', key='-THUMBNAIL-')],
              [sg.Btn('Write changes', disabled=True, key='-WRITE_CHANGES-')]])
      ],
     [sg.Btn('Exit', key='-EXIT-')]
 ]
-window = sg.Window('Match Locations', layout)
+window = sg.Window('Find Photo Locations', layout)
 
 latitude = 0.0
 longitude = 0.0
 
+# Main window event loop
 while True:
     event, values = window.read()
     print(event)
@@ -199,31 +197,35 @@ while True:
         if not path == '':
             # Get folder name from path and update window info
             dir_name = os.path.basename(path)
-            window['-SOURCE_FOLDER-'].update(os.path.basename(path))
+            window['-DISPLAY_FOLDER-'].update(os.path.basename(path))
 
-            # Is there a gpx file?
+            # Is there a gpx file in folder? - if so analyse it
             gpx_filespec = check_gpx(path)
-            if not gpx_filespec == '':
-                window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
-                matchlocations.load_photo_data(path, photo_data)
-                analyse_folder()
+            if gpx_filespec == '':
+                window['-DISPLAY-GPX-'].update('file not selected')
+            else:
+                window['-DISPLAY-GPX-'].update(os.path.basename(gpx_filespec))
+                ml.load_photo_data(path, photo_data)
+                if len(photo_data) > 0:
+                    analyse_folder()
+                else:
+                    sg.PopupCancel('All photos already have gps data')
 
     elif event == '-SELECT_GPX_FILE-':
-        gpx_filespec = get_file()
+        gpx_filespec = values['-SELECT_GPX_FILE-']
         if not gpx_filespec == '':
             # Get filename from path and update window info
-            window['-GPX_FILE-'].update(os.path.basename(gpx_filespec))
-            # Has a path already been selected
+            window['-DISPLAY-GPX-'].update(os.path.basename(gpx_filespec))
+            # Has a path already been selected - if so analyse it
             if not path == '':
                 clear_photo_data()
-                matchlocations.load_photo_data(path, photo_data)
+                ml.load_photo_data(path, photo_data)
                 analyse_folder()
 
     elif event == '-PHOTOLIST-':
         selected = values['-PHOTOLIST-']
-        for item in selected:
-            params = re.split(' ', item)
-            img_file = params[0]
+        # Only ever one item as it's single select, first token in string is filename
+        img_file = selected[0].split()[0]
         for item in photo_data:
             if item.filename == img_file:
                 selected_photo = item
@@ -231,12 +233,12 @@ while True:
         window['-LAT-'].update(selected_photo.latitude)
         window['-LONG-'].update(selected_photo.longitude)
         window['-DISPLAY-'].update(disabled=False)
-        window['-CORRECTION-'].update(disabled=False)
 
-        image = Image.open(path + path_sep + selected_photo.filename)
-        image.thumbnail((275, 275))
-        photo_img = ImageTk.PhotoImage(image)
-        window['-THUMBNAIL-'].update(data=photo_img)
+        with Image.open(path + os.sep + selected_photo.filename) as image:
+            image.thumbnail((275, 275))
+            photo_img = ImageTk.PhotoImage(image)
+            window['-THUMBNAIL-'].update(data=photo_img)
+
 
     elif event == '-DISPLAY-':
         webbrowser.open_new_tab(selected_photo.get_osm_link())
@@ -277,8 +279,8 @@ while True:
             # Disable button so can't do it twice
             window['-WRITE_CHANGES-'].update(disabled=True)
             # Write the changes
-            ue.update_exif(path, gpx_filespec)
-            sg.popup_ok('Changes written to %d files.' % len(photo_data))
+            i = ue.update_exif(path, gpx_filespec)
+            sg.popup_ok('Changes written to %d files.' % i)
 
     if latitude == 0.0 and longitude == 0.0:
         window['-CALC_CORRECTION-'].update(disabled=True)
