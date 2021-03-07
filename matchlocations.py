@@ -121,9 +121,11 @@ def get_photo_data(path, photo_data, gpx_file=''):
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
-            photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
-            rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
-            photo_data.append(rec)
+            # Only photos without GPS data already
+            if not exif_dict['GPS']:
+                photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+                rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
+                photo_data.append(rec)
     # Sort list by date/time
     photo_data.sort()
 
@@ -155,9 +157,11 @@ def load_photo_data(path, photo_data):
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
-            photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
-            rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
-            photo_data.append(rec)
+            # Only photos without GPS data already
+            if not exif_dict['GPS']:
+                photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+                rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
+                photo_data.append(rec)
     # Sort list by date/time
     photo_data.sort()
 

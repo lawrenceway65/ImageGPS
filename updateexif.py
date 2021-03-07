@@ -87,6 +87,18 @@ def create_gps_dict(lat, long, elevation):
 # End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
 
 
+def file_has_gps(jpeg_file):
+    """Check if file contains gps exif info
+    :param jpeg_file: File to check
+    :return True if contains gps data, otherwise False
+    """
+    exif_dict = piexif.load(jpeg_file)
+    if exif_dict['GPS']:
+        return True
+    else:
+        return False
+
+
 def update_exif(path, gpx_filespec):
     """Update exif info in files
     :type path: str
@@ -116,6 +128,11 @@ def update_exif(path, gpx_filespec):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
             original_time = exif_dict['Exif'][DateTimeOriginal].decode()
+            gps = exif_dict['GPS']
+            if gps:
+                print('%s has gps info' % os.path.basename(entry.path))
+            else:
+                print('%s has no gps info' % os.path.basename(entry.path))
 
             # Find the photo in the list
             for record in photos:

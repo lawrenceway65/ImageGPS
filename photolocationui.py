@@ -196,7 +196,8 @@ while True:
             else:
                 window['-DISPLAY-GPX-'].update(os.path.basename(gpx_filespec))
                 ml.load_photo_data(path, photo_data)
-                analyse_folder()
+                if len(photo_data) > 0:
+                    analyse_folder()
 
     elif event == '-SELECT_GPX_FILE-':
         gpx_filespec = values['-SELECT_GPX_FILE-']
