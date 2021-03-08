@@ -151,15 +151,16 @@ sg.SetOptions(font=('Arial', 12),
               text_element_background_color='light gray')
 layout = [
     [sg.Col([
-    [sg.Text('Photo Folder', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('folder not selected', size=(35, 1), font=('Arial', 20), text_color='blue', justification='left', key='-DISPLAY_FOLDER-')],
-    [sg.Text('GPX File', size=(15, 1), auto_size_text=False, justification='left'),
-     sg.Text('file not selected', size=(50, 1), key='-DISPLAY-GPX-')]]),
+        [sg.Text('Photo Folder:', size=(12, 1), auto_size_text=False, justification='left'),
+        sg.Text('folder not selected', size=(25, 1), font=('Arial', 20), text_color='blue', justification='left', key='-DISPLAY_FOLDER-')],
+        [sg.Text('GPX File:', size=(12, 1), auto_size_text=False, justification='left'),
+        sg.Text('file not selected', size=(40, 1), key='-DISPLAY-GPX-')]]),
     sg.Col([
         [sg.Input('-', justification='left', size=(1, 1), enable_events=True, key='-SOURCE_FOLDER-', visible=False),
-        sg.FolderBrowse('Select Folder',size=(14,1))],
+        sg.FolderBrowse('Select Folder',size=(12, 1))],
         [sg.Input('-', justification='left', size=(1, 1), enable_events=True, key='-SELECT_GPX_FILE-', visible=False),
-        sg.FileBrowse('Select File', size=(14,1))]])],
+        sg.FileBrowse('Select File', size=(12, 1))]]),
+    sg.Col([[sg.Button('Match', size=(6, 2), disabled=True, key='-MATCH-')]])],
     [sg.Frame('Data', layout=[[sg.Text('Photos:', size=(15, 1)), sg.Text('', size=(3, 1), key='-PHOTOS-'),
                                sg.Text('GPX Start:', size=(15, 1)), sg.Text('', size=(15, 1), key='-GPX_START-'),
                                sg.Text('GPX End:', size=(15, 1)), sg.Text('', size=(15, 1), key='-GPX_END-')],
@@ -192,11 +193,9 @@ while True:
         break
 
     elif event == '-SOURCE_FOLDER-':
-        clear_photo_data()
         path = values['-SOURCE_FOLDER-']
         if not path == '':
             # Get folder name from path and update window info
-            dir_name = os.path.basename(path)
             window['-DISPLAY_FOLDER-'].update(os.path.basename(path))
 
             # Is there a gpx file in folder? - if so analyse it
@@ -205,11 +204,15 @@ while True:
                 window['-DISPLAY-GPX-'].update('file not selected')
             else:
                 window['-DISPLAY-GPX-'].update(os.path.basename(gpx_filespec))
-                ml.load_photo_data(path, photo_data)
-                if len(photo_data) > 0:
-                    analyse_folder()
-                else:
-                    sg.PopupCancel('All photos already have gps data')
+                window['-MATCH-'].update(disabled=False)
+
+    elif event == '-MATCH-':
+        clear_photo_data()
+        ml.load_photo_data(path, photo_data)
+        if len(photo_data) > 0:
+            analyse_folder()
+        else:
+            sg.PopupCancel('All photos already have gps data')
 
     elif event == '-SELECT_GPX_FILE-':
         gpx_filespec = values['-SELECT_GPX_FILE-']
@@ -218,9 +221,7 @@ while True:
             window['-DISPLAY-GPX-'].update(os.path.basename(gpx_filespec))
             # Has a path already been selected - if so analyse it
             if not path == '':
-                clear_photo_data()
-                ml.load_photo_data(path, photo_data)
-                analyse_folder()
+                window['-MATCH-'].update(disabled=False)
 
     elif event == '-PHOTOLIST-':
         selected = values['-PHOTOLIST-']
