@@ -16,33 +16,42 @@ path = ''
 # GPX file to use for reference
 gpx_filespec = ''
 # Data on the set of photos and track
-set_data = None
+# set_data = None
 # Data on each photo (list of PhotoMetaData objects)
 photo_data = []
 # The time correction to apply (seconds)
 correction = 0.0
 
 
-def get_set_data(photo_data):
-    """Get data pertaining to set of photos. Return as dictionary
-    :type photo_data: list of PhotoMetaData
-    """
-    matched_photos_count = 0
-    for item in photo_data:
-        if item.point_found:
-            matched_photos_count += 1
+class PhotoSetData:
+    """Hold data relating to set of photos"""
+    def __init__(self, photo_data):
+        self.matched_photos_count = 0
+        for item in photo_data:
+            if item.point_found:
+                self.matched_photos_count += 1
 
-    first_photo = photo_data[0].timestamp_corrected
-    last_photo = photo_data[len(photo_data)-1].timestamp_corrected
+        self.first_photo = time.localtime(photo_data[0].timestamp_corrected.timestamp())
+        self.last_photo = time.localtime(photo_data[len(photo_data)-1].timestamp_corrected.timestamp())
+        self.photo_count = len(photo_data)
+        self.first_gps = None
+        self.last_gps = None
 
-    set_data = {'photo_count': len(photo_data),
-                'matched_count': matched_photos_count,
-                'first_photo': first_photo,
-                'last_photo': last_photo,
-                'first_gps': 0,
-                'last_gps': 0}
-
-    return set_data
+    def set_gpx_data(self, gpx_file):
+        """Get first and last gpx point and update in set data
+        :param gpx_file: gpx filespec
+        """
+        with open(gpx_file, 'r') as file:
+            gpx_data = file.read()
+            input_gpx = gpxpy.parse(gpx_data)
+            for track in input_gpx.tracks:
+                for segment in track.segments:
+                    for point in segment.points:
+                        if self.first_gps is None:
+                            # Set first point
+                            self.first_gps = time.localtime(point.time.timestamp())
+                # Set last point
+                self.last_gps = time.localtime(point.time.timestamp())
 
 
 def check_gpx(path):
@@ -54,60 +63,39 @@ def check_gpx(path):
     return ''
 
 
-def get_gpx_data(gpx_file, set_data):
-    """Get first and last gpx point and update in set data
-    :param gpx_file: gpx filespec
-    :param set_data: data to update
-    """
-    with open(gpx_file, 'r') as file:
-        gpx_data = file.read()
-        input_gpx = gpxpy.parse(gpx_data)
-        for track in input_gpx.tracks:
-            for segment in track.segments:
-                for point in segment.points:
-                    if set_data['first_gps'] == 0:
-                        # Set first point
-                        set_data['first_gps'] = point.time
-            # Set last point
-            set_data['last_gps'] = point.time
-
-    return
-
-
 def analyse_folder():
     """Match locations for the photo in the folder and update the window"""
     ml.match_locations(gpx_filespec, photo_data, path, correction)
-    set_data = get_set_data(photo_data)
+    set_data = PhotoSetData(photo_data)
 
     # Get gpx data
-    get_gpx_data(gpx_filespec, set_data)
-    gpx_file = os.path.basename(gpx_filespec)
+    set_data.set_gpx_data(gpx_filespec)
 
     # Update window info
-    window['-PHOTOS-'].update('%d' % set_data['photo_count'])
-    window['-MATCHED-'].update('%d' % set_data['matched_count'])
-    window['-FIRST_PHOTO-'].update(set_data['first_photo'].strftime('%d:%m:%Y %H:%M:%S'))
-    window['-LAST_PHOTO-'].update(set_data['last_photo'].strftime('%d:%m:%Y %H:%M:%S'))
-    window['-GPX_START-'].update(set_data['first_gps'].strftime('%d:%m:%Y %H:%M:%S'))
-    window['-GPX_END-'].update(set_data['last_gps'].strftime('%d:%m:%Y %H:%M:%S'))
+    window['-PHOTOS-'].update('%d' % set_data.photo_count)
+    window['-MATCHED-'].update('%d' % set_data.matched_photos_count)
+    window['-FIRST_PHOTO-'].update(time.strftime('%d:%m:%Y %H:%M:%S', set_data.first_photo))
+    window['-LAST_PHOTO-'].update(time.strftime('%d:%m:%Y %H:%M:%S', set_data.last_photo))
+    window['-GPX_START-'].update(time.strftime('%d:%m:%Y %H:%M:%S', set_data.first_gps))
+    window['-GPX_END-'].update(time.strftime('%d:%m:%Y %H:%M:%S', set_data.last_gps))
 
     # Set colours according to match
-    if time.localtime(set_data['first_photo'].timestamp()) < time.localtime(set_data['first_gps'].timestamp()):
+    if set_data.first_photo < set_data.first_gps:
         window['-FIRST_PHOTO-'].update(text_color='red')
     else:
         window['-FIRST_PHOTO-'].update(text_color='green')
 
-    if time.localtime(set_data['last_photo'].timestamp()) > time.localtime(set_data['last_gps'].timestamp()):
+    if set_data.last_photo > set_data.last_gps:
         window['-LAST_PHOTO-'].update(text_color='red')
     else:
         window['-LAST_PHOTO-'].update(text_color='green')
 
-    if set_data['photo_count'] == set_data['matched_count']:
+    if set_data.photo_count == set_data.matched_photos_count:
         window['-MATCHED-'].update(text_color='green')
     else:
         window['-MATCHED-'].update(text_color='red')
 
-    if set_data['matched_count'] == 0:
+    if set_data.matched_photos_count == 0:
         window['-FIRST_PHOTO-'].update(text_color='red')
         window['-LAST_PHOTO-'].update(text_color='red')
 
