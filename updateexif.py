@@ -96,7 +96,8 @@ def update_exif(path, gpx_filespec):
     photos = []
 
     # Read in data
-    with open(gpx_filespec.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
+    gpx_filename = os.path.basename(gpx_filespec)
+    with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
         header_line = csv_file.readline()
         for line in csv_file:
             # Create record and add to list if matched
