@@ -6,11 +6,7 @@ import gpxpy
 import gpxpy.gpx
 from geopy.distance import distance
 from datetime import datetime
-from datetime import timedelta
-import time
 import os
-import subprocess
-import json
 
 
 class PointList:
@@ -97,10 +93,6 @@ def get_difference(gpx_xml, photo_time, lat, long):
 
 
 def calculate_correction(path, photo_file, gpx_filespec, lat, long):
-
-    # photo = 'IMG_6642.jpg'
-    # lat = 51.400984
-    # long = -0.34279
 
     # Get time photo taken from exif
     image = Image.open(path + '/' + photo_file)
