@@ -60,32 +60,36 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                 photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
                 photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
                 # Find first photo after start of gpx track
-                while point_time > photo_time and photo_count < len(photo_data):
+                while point_time > photo_time:
                     photo_count += 1
-                    photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
-                    photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
+                    if photo_count < len(photo_data):
+                        photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                        photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
+                    else:
+                        break
                 break
 
-    # Parse to gpx and iterate through remaining photos
-    for track in input_gpx.tracks:
-        for segment in track.segments:
-            for point in segment.points:
-                point_time = time.localtime(point.time.timestamp())
-                # Apply correction
-                photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
-                photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
-                # May be many photos at one point
-                while point_time > photo_time and photo_count < len(photo_data):
-                    # Found a match so update
-                    photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
-                    # Next one
-                    photo_count += 1
+    # Parse to gpx and iterate through remaining photos, if there are any
+    if photo_count < len(photo_data):
+        for track in input_gpx.tracks:
+            for segment in track.segments:
+                for point in segment.points:
+                    point_time = time.localtime(point.time.timestamp())
+                    # Apply correction
+                    photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                    photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
+                    # May be many photos at one point
+                    while point_time > photo_time and photo_count < len(photo_data):
+                        # Found a match so update
+                        photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
+                        # Next one
+                        photo_count += 1
+                        if photo_count >= len(photo_data):
+                            break
+                        photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
+
                     if photo_count >= len(photo_data):
                         break
-                    photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
-
-                if photo_count >= len(photo_data):
-                    break
 
     print('%s matched out of %s' % (photo_count, len(photo_data)))
     # Log correction used and result
