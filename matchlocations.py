@@ -42,6 +42,8 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
     photo_count = 0
     correction = timedelta(0, correction_seconds)
 
+    pm.ProgressBar('Match Locations', 0, len(photo_data), '')
+
     # Reset data
     for item in photo_data:
         item.timestamp_corrected = item.timestamp_original
