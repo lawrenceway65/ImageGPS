@@ -185,6 +185,7 @@ while True:
         if not path == '':
             # Get folder name from path and update window info
             window['-DISPLAY_FOLDER-'].update(os.path.basename(path))
+            clear_photo_data()
 
             # Is there a gpx file in folder? - if so analyse it
             gpx_filespec = check_gpx(path)
