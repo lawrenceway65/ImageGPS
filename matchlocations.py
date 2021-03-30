@@ -88,6 +88,7 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                         photo_count += 1
                         if photo_count >= len(photo_data):
                             break
+                        photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
                         photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
 
                     if photo_count >= len(photo_data):
