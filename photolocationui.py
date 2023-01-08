@@ -137,10 +137,10 @@ def clear_photo_data():
     window['-THUMBNAIL-'].update(data=None)
     window['-PLUS1HOUR-'].update(disabled=True)
     window['-MINUS1HOUR-'].update(disabled=True)
-    window['-PLUS1MIN-'].update(disabled=False)
-    window['-MINUS1MIN-'].update(disabled=False)
-    window['-PLUS1SEC-'].update(disabled=False)
-    window['-MINUS1SEC-'].update(disabled=False)
+    window['-PLUS1MIN-'].update(disabled=True)
+    window['-MINUS1MIN-'].update(disabled=True)
+    window['-PLUS1SEC-'].update(disabled=True)
+    window['-MINUS1SEC-'].update(disabled=True)
 
 
 # Main window definition
