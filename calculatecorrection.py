@@ -108,6 +108,7 @@ def calculate_correction(path, photo_file, gpx_filespec, lat, long):
     print(correction)
     return correction
 
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     calculate_correction()

@@ -56,7 +56,8 @@ class PhotoMetadata:
         """:return string for csv file"""
         if self.point_found:
             osm_link = self.get_osm_link()
-            self.location = get_locality(self.latitude, self.longitude)
+#            self.location = get_locality(self.latitude, self.longitude)
+            self.location = ''
         else:
             osm_link = 'n/a'
             address = 'not found'

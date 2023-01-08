@@ -109,7 +109,13 @@ def analyse_folder():
         display_list.append(s)
     window['-PHOTOLIST-'].update(display_list)
     window['-WRITE_CHANGES-'].update(disabled=False)
-    window['-CORRECTION-'].update(disabled=False)
+#    window['-CORRECTION-'].update(disabled=False)
+    window['-PLUS1HOUR-'].update(disabled=False)
+    window['-MINUS1HOUR-'].update(disabled=False)
+    window['-PLUS1MIN-'].update(disabled=False)
+    window['-MINUS1MIN-'].update(disabled=False)
+    window['-PLUS1SEC-'].update(disabled=False)
+    window['-MINUS1SEC-'].update(disabled=False)
 
 
 def clear_photo_data():
@@ -126,9 +132,15 @@ def clear_photo_data():
     window['-GPX_END-'].update('')
     window['-LAT-'].update('')
     window['-LONG-'].update('')
-    window['-CORRECTION-'].update('0')
+#    window['-CORRECTION-'].update('0')
     window['-PHOTOLIST-'].update(values=[' '])
     window['-THUMBNAIL-'].update(data=None)
+    window['-PLUS1HOUR-'].update(disabled=True)
+    window['-MINUS1HOUR-'].update(disabled=True)
+    window['-PLUS1MIN-'].update(disabled=False)
+    window['-MINUS1MIN-'].update(disabled=False)
+    window['-PLUS1SEC-'].update(disabled=False)
+    window['-MINUS1SEC-'].update(disabled=False)
 
 
 # Main window definition
@@ -158,7 +170,13 @@ layout = [
     [sg.Listbox(values=[' '], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, size=(55, 25), key='-PHOTOLIST-'),
      sg.Col([[sg.Text('Latitude:', size=(10, 1)), sg.Input('', size=(15, 1), enable_events=True, key='-LAT-')],
              [sg.Text('Longitude:', size=(10, 1)), sg.Input('', size=(15, 1), enable_events=True, key='-LONG-')],
-             [sg.Text('Correction:', size=(10, 1)), sg.Input('0', disabled=True, size=(10, 1), enable_events=True, key='-CORRECTION-')],
+             [sg.Text('Correction:', size=(10, 1)), sg.Input('0', disabled=True, size=(7, 1), enable_events=True, key='-CORRECTION-')],
+             [sg.Btn('-1HR', disabled=True, key='-MINUS1HOUR-'),
+             sg.Btn('-1MIN', disabled=True, key='-MINUS1MIN-'),
+             sg.Btn('-1SEC', disabled=True, key='-MINUS1SEC-'),
+             sg.Btn('+1SEC', disabled=True, key='-PLUS1SEC-'),
+             sg.Btn('+1MIN', disabled=True, key='-PLUS1MIN-'),
+             sg.Btn('+1HR', disabled=True, key='-PLUS1HOUR-')],
              [sg.Btn('Display', disabled=True, key='-DISPLAY-'),
               sg.Btn('Calc Correction', disabled=True, key='-CALC_CORRECTION-'),
               sg.Btn('Apply', disabled=True, key='-APPLY_CORRECTION-')],
@@ -240,6 +258,36 @@ while True:
             window['-APPLY_CORRECTION-'].update(disabled=False)
         except ValueError:
             correction = 0.0
+
+    elif event == '-PLUS1HOUR-':
+        correction += 3600
+        window['-CORRECTION-'].update(correction)
+        analyse_folder()
+
+    elif event == '-MINUS1HOUR-':
+        correction -= 3600
+        window['-CORRECTION-'].update(correction)
+        analyse_folder()
+
+    elif event == '-PLUS1MIN-':
+        correction += 60
+        window['-CORRECTION-'].update(correction)
+        analyse_folder()
+
+    elif event == '-MINUS1MIN-':
+        correction -= 60
+        window['-CORRECTION-'].update(correction)
+        analyse_folder()
+
+    elif event == '-PLUS1SEC-':
+        correction += 1
+        window['-CORRECTION-'].update(correction)
+        analyse_folder()
+
+    elif event == '-MINUS1SEC-':
+        correction -= 1
+        window['-CORRECTION-'].update(correction)
+        analyse_folder()
 
     elif event == '-APPLY_CORRECTION-':
         window['-APPLY_CORRECTION-'].update(disabled=True)
