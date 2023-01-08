@@ -87,27 +87,12 @@ def create_gps_dict(lat, long, elevation):
 # End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
 
 
-def update_exif_from_csv(path, gpx_filespec):
+def update_exif(path, photos=[]):
     """Update exif info in files
     :type path: str
     :type gpx_filespec: str
     :return count of photos updated
     """
-    photos = []
-
-    # Read in data
-    gpx_filename = os.path.basename(gpx_filespec)
-    with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'r') as csv_file:
-        header_line = csv_file.readline()
-        for line in csv_file:
-            # Create record and add to list if matched
-            csv_data = re.split(',', line)
-            if float(csv_data[4]) != 0:
-                rec = PhotoMetadata(csv_data[0],
-                                    datetime.strptime(csv_data[2], "%d:%m:%Y %H:%M:%S"),
-                                    float(csv_data[3]),
-                                    float(csv_data[4]),)
-                photos.append(rec)
 
     if len(photos) == 0:
         # No valid data so return

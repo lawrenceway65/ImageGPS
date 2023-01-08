@@ -6,7 +6,7 @@ import gpxpy.gpx
 import webbrowser
 from PIL import Image, ImageTk
 import calculatecorrection
-import updateexif as ue
+import updateexif2 as ue
 import time
 
 
@@ -318,7 +318,7 @@ while True:
             # Disable button so can't do it twice
             window['-WRITE_CHANGES-'].update(disabled=True)
             # Write the changes
-            i = ue.update_exif(path, gpx_filespec)
+            i = ue.update_exif(path, photo_data)
             sg.popup_ok('Changes written to %d files.' % i)
 
     if latitude == 0.0 and longitude == 0.0:
