@@ -107,29 +107,30 @@ def update_exif(path, photos, gpx_filespec):
             # Find the photo in the list
             for record in photos:
                 if record.filename == os.path.basename(entry.path):
-                    pm.ProgressBar('Update files', photos_updated, len(photos), record.filename)
-                    photos_updated += 1
+                    if record.latitude != 0 or record.longitude != 0:
+                        pm.ProgressBar('Update files', photos_updated, len(photos), record.filename)
+                        photos_updated += 1
 
-                    gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
+                        gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
 
-                    # Write the data
-                    update_time = datetime.strftime(record.timestamp_corrected, "%Y:%m:%d %H:%M:%S")
-                    exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
-                    exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
-                    exif_dict.update(gps_dict)
-                    exif_bytes = piexif.dump(exif_dict)
-                    jpeg_file = Image.open(entry.path)
-                    jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
+                        # Write the data
+                        update_time = datetime.strftime(record.timestamp_corrected, "%Y:%m:%d %H:%M:%S")
+                        exif_dict['Exif'][DateTimeOriginal] = update_time.encode()
+                        exif_dict['Exif'][DateTimeDigitized] = update_time.encode()
+                        exif_dict.update(gps_dict)
+                        exif_bytes = piexif.dump(exif_dict)
+                        jpeg_file = Image.open(entry.path)
+                        jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
 
-                    # Output a log - need to record when we do this
-                    log = ('%s :%s exif updated. Original: %s New: %s'
-                          % (datetime.strftime(datetime.now(), "%Y:%m:%d %H:%M:%S"),
-                             os.path.basename(entry.path),
-                             original_time,
-                             update_time))
-                    # print(log)
-                    with open('%s/exif_update.log' % path, 'a') as logfile:
-                        logfile.write(log + '\n')
+                        # Output a log - need to record when we do this
+                        log = ('%s :%s exif updated. Original: %s New: %s'
+                              % (datetime.strftime(datetime.now(), "%Y:%m:%d %H:%M:%S"),
+                                 os.path.basename(entry.path),
+                                 original_time,
+                                 update_time))
+                        # print(log)
+                        with open('%s/exif_update.log' % path, 'a') as logfile:
+                            logfile.write(log + '\n')
 
                     # Found and updated so no need to search further
                     break
