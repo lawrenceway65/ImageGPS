@@ -222,13 +222,14 @@ while True:
                 break
         window['-LAT-'].update(selected_photo.latitude)
         window['-LONG-'].update(selected_photo.longitude)
-        window['-DISPLAY-'].update(disabled=False)
+        # If there are co-ordinates allow display of location map
+        if selected_photo.latitude != 0 or selected_photo.longitude != 0:
+            window['-DISPLAY-'].update(disabled=False)
 
         with Image.open(path + os.sep + selected_photo.filename) as image:
             image.thumbnail((275, 275))
             photo_img = ImageTk.PhotoImage(image)
             window['-THUMBNAIL-'].update(data=photo_img)
-
 
     elif event == '-DISPLAY-':
         webbrowser.open_new_tab(selected_photo.get_osm_link())
