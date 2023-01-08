@@ -5,6 +5,7 @@ import json
 
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
 osm_location_format = 'https://www.openstreetmap.org/?mlat=%f&mlon=%f#map=18/%f/%f'
+google_location_format = 'https://www.google.com/maps/?q=%f,%f'
 
 
 class PhotoMetadata:
@@ -29,7 +30,9 @@ class PhotoMetadata:
 
     def get_osm_link(self):
         if self.point_found:
-            return osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
+#            return osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
+            return google_location_format % (self.latitude, self.longitude)
+
         else:
             return ''
 
