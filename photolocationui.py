@@ -114,8 +114,8 @@ def analyse_folder():
     window['-MINUS1HOUR-'].update(disabled=False)
     window['-PLUS1MIN-'].update(disabled=False)
     window['-MINUS1MIN-'].update(disabled=False)
-    window['-PLUS1SEC-'].update(disabled=False)
-    window['-MINUS1SEC-'].update(disabled=False)
+    window['-PLUS15SEC-'].update(disabled=False)
+    window['-MINUS15SEC-'].update(disabled=False)
 
 
 def clear_photo_data():
@@ -139,8 +139,8 @@ def clear_photo_data():
     window['-MINUS1HOUR-'].update(disabled=True)
     window['-PLUS1MIN-'].update(disabled=True)
     window['-MINUS1MIN-'].update(disabled=True)
-    window['-PLUS1SEC-'].update(disabled=True)
-    window['-MINUS1SEC-'].update(disabled=True)
+    window['-PLUS15SEC-'].update(disabled=True)
+    window['-MINUS15SEC-'].update(disabled=True)
 
 
 # Main window definition
@@ -173,8 +173,8 @@ layout = [
              [sg.Text('Correction:', size=(10, 1)), sg.Input('0', disabled=True, size=(7, 1), enable_events=True, key='-CORRECTION-')],
              [sg.Btn('-1HR', disabled=True, key='-MINUS1HOUR-'),
              sg.Btn('-1MIN', disabled=True, key='-MINUS1MIN-'),
-             sg.Btn('-1SEC', disabled=True, key='-MINUS1SEC-'),
-             sg.Btn('+1SEC', disabled=True, key='-PLUS1SEC-'),
+             sg.Btn('-15SEC', disabled=True, key='-MINUS15SEC-'),
+             sg.Btn('+15SEC', disabled=True, key='-PLUS15SEC-'),
              sg.Btn('+1MIN', disabled=True, key='-PLUS1MIN-'),
              sg.Btn('+1HR', disabled=True, key='-PLUS1HOUR-')],
              [sg.Btn('Display', disabled=True, key='-DISPLAY-'),
@@ -281,13 +281,13 @@ while True:
         window['-CORRECTION-'].update(correction)
         analyse_folder()
 
-    elif event == '-PLUS1SEC-':
-        correction += 1
+    elif event == '-PLUS15SEC-':
+        correction += 15
         window['-CORRECTION-'].update(correction)
         analyse_folder()
 
-    elif event == '-MINUS1SEC-':
-        correction -= 1
+    elif event == '-MINUS15SEC-':
+        correction -= 15
         window['-CORRECTION-'].update(correction)
         analyse_folder()
 
