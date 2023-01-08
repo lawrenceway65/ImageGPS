@@ -104,15 +104,7 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                        photo_count,
                        len(photo_data)))
 
-    gpx_filename = os.path.basename(gpx_filespec)
-    with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
-        csv_file.write('Photo,Date/Time (orig),Date/Time (corrected),Lat,Long,Link,Location\n')
-        i = 0
-        for record in photo_data:
-            pm.ProgressBar('Match Locations', i, len(photo_data), record.filename)
-            i += 1
-            csv_file.write(record.csv_output())
-        pm.ProgressBarDelete()
+    pm.ProgressBarDelete()
 
 
 def get_photo_data(path, photo_data, gpx_file=''):

@@ -87,7 +87,7 @@ def create_gps_dict(lat, long, elevation):
 # End of extract from https://gist.github.com/c060604/8a51f8999be12fc2be498e9ca56adc72#file-exif-py
 
 
-def update_exif(path, photos=[]):
+def update_exif(path, photos, gpx_filespec):
     """Update exif info in files
     :type path: str
     :type gpx_filespec: str
@@ -133,6 +133,16 @@ def update_exif(path, photos=[]):
 
                     # Found and updated so no need to search further
                     break
+
+
+    gpx_filename = os.path.basename(gpx_filespec)
+    with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
+        csv_file.write('Photo,Date/Time (orig),Date/Time (corrected),Lat,Long,Link,Location\n')
+        i = 0
+        for record in photos:
+            pm.ProgressBar('Match Locations', i, len(photos), record.filename)
+            i += 1
+            csv_file.write(record.csv_output())
 
     pm.ProgressBarDelete()
 
