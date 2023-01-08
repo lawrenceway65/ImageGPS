@@ -241,7 +241,9 @@ while True:
         window['-LAT-'].update(selected_photo.latitude)
         window['-LONG-'].update(selected_photo.longitude)
         # If there are co-ordinates allow display of location map
-        if selected_photo.latitude != 0 or selected_photo.longitude != 0:
+        if selected_photo.latitude == 0 and selected_photo.longitude == 0:
+            window['-DISPLAY-'].update(disabled=True)
+        else:
             window['-DISPLAY-'].update(disabled=False)
 
         with Image.open(path + os.sep + selected_photo.filename) as image:
