@@ -108,7 +108,8 @@ def update_exif(path, photos, gpx_filespec):
             for record in photos:
                 if record.filename == os.path.basename(entry.path):
                     if record.latitude != 0 or record.longitude != 0:
-                        pm.ProgressBar('Update files', photos_updated, len(photos), record.filename)
+                        # Photo found and there are gps co-ords, so update
+                        pm.ProgressBar('Update exif', photos_updated, len(photos), record.filename)
                         photos_updated += 1
 
                         gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
@@ -141,9 +142,10 @@ def update_exif(path, photos, gpx_filespec):
         csv_file.write('Photo,Date/Time (orig),Date/Time (corrected),Lat,Long,Link,Location\n')
         i = 0
         for record in photos:
-            pm.ProgressBar('Match Locations', i, len(photos), record.filename)
-            i += 1
-            csv_file.write(record.csv_output())
+            if record.latitude != 0 or record.longitude != 0:
+                pm.ProgressBar('Write csv', i, len(photos), record.filename)
+                i += 1
+                csv_file.write(record.csv_output())
 
     pm.ProgressBarDelete()
 
