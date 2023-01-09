@@ -95,14 +95,6 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                         break
 
     print('%s matched out of %s' % (photo_count, len(photo_data)))
-    # Log correction used and result
-    with open(path + '/location.txt', 'w') as logfile:
-        logfile.write('%s\nPath = %s\nCorrection = %d sec\n%d matched out of %d' %
-                      (datetime.now(),
-                       path,
-                       correction_seconds,
-                       photo_count,
-                       len(photo_data)))
 
     pm.ProgressBarDelete()
 

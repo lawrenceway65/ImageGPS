@@ -157,7 +157,7 @@ layout = [
         sg.Text('file not selected', size=(40, 1), key='-DISPLAY-GPX-')]]),
     sg.Col([
         [sg.Input('-', justification='left', size=(1, 1), enable_events=True, key='-SOURCE_FOLDER-', visible=False),
-        sg.FolderBrowse('Select Folder',size=(12, 1))],
+        sg.FolderBrowse('Select Folder', size=(12, 1))],
         [sg.Input('-', justification='left', size=(1, 1), enable_events=True, key='-SELECT_GPX_FILE-', visible=False),
         sg.FileBrowse('Select File', size=(12, 1))]]),
     sg.Col([[sg.Button('Match', size=(6, 2), disabled=True, key='-MATCH-')]])],
