@@ -32,7 +32,6 @@ class PhotoMetadata:
         if self.point_found:
 #            return osm_location_format % (self.latitude, self.longitude, self.latitude, self.longitude)
             return google_location_format % (self.latitude, self.longitude)
-
         else:
             return ''
 
