@@ -8,7 +8,7 @@ import piexif
 from fractions import Fraction
 from photmetadata import PhotoMetadata
 import PySimpleGUI as sg
-import progressmeter
+from progressmeter import ProgressBar
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -106,7 +106,7 @@ def update_exif(path, photos, gpx_filespec):
         return 0
 
     photos_updated = 0
-    progress_bar = progressmeter.ProgressBar('Update exif', len(photos))
+    progress_bar = ProgressBar('Update exif', len(photos))
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)

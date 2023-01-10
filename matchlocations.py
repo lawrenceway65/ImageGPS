@@ -9,7 +9,7 @@ import os
 import piexif
 from photmetadata import PhotoMetadata
 import PySimpleGUI as sg
-import progressmeter
+from progressmeter import ProgressBar
 
 
 # EXIF magic numbers from CIPA DC-008-Translation-2012
@@ -42,7 +42,7 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
     photo_count = 0
     correction = timedelta(0, correction_seconds)
 
-    progress_bar = progressmeter.ProgressBar('Match Locations', len(photo_data))
+    progress_bar = ProgressBar('Match Locations', len(photo_data))
 
     # Reset data
     for item in photo_data:
@@ -64,7 +64,7 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                 # Find first photo after start of gpx track
                 while point_time > photo_time:
                     photo_count += 1
-                    progress_bar.Update(photo_count, len(photo_data))
+                    progress_bar.Update(photo_count)
                     if photo_count < len(photo_data):
                         photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
                         photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
@@ -87,7 +87,7 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                         photo_data[photo_count].set_gps(point.latitude, point.longitude, point.elevation)
                         # Next one
                         photo_count += 1
-                        progress_bar.Update(photo_count, len(photo_data))
+                        progress_bar.Update(photo_count)
                         if photo_count >= len(photo_data):
                             break
                         photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
