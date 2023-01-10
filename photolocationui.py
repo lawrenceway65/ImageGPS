@@ -218,6 +218,18 @@ while True:
         ml.load_photo_data(path, photo_data)
         if len(photo_data) > 0:
             analyse_folder()
+            selected_photo = photo_data[0]
+            window['-LAT-'].update(selected_photo.latitude)
+            window['-LONG-'].update(selected_photo.longitude)
+            with Image.open(path + os.sep + selected_photo.filename) as image:
+                image.thumbnail((275, 275))
+                photo_img = ImageTk.PhotoImage(image)
+                window['-THUMBNAIL-'].update(data=photo_img)
+            # If there are co-ordinates allow display of location map
+            if selected_photo.latitude == 0 and selected_photo.longitude == 0:
+                window['-DISPLAY-'].update(disabled=True)
+            else:
+                window['-DISPLAY-'].update(disabled=False)
         else:
             sg.PopupOK('All photos already have gps data')
 
@@ -235,9 +247,9 @@ while True:
         # Only ever one item as it's single select, first token in string is filename
         img_file = selected[0].split()[0]
         for item in photo_data:
-            if item.filename == img_file:
-                selected_photo = item
-                break
+             if item.filename == img_file:
+                 selected_photo = item
+                 break
         window['-LAT-'].update(selected_photo.latitude)
         window['-LONG-'].update(selected_photo.longitude)
         # If there are co-ordinates allow display of location map
