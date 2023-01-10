@@ -71,9 +71,16 @@ def create_gps_dict(lat, long, elevation):
     exiv_lat = (change_to_rational(lat_deg[0]), change_to_rational(lat_deg[1]), change_to_rational(lat_deg[2]))
     exiv_lng = (change_to_rational(lng_deg[0]), change_to_rational(lng_deg[1]), change_to_rational(lng_deg[2]))
 
+    # Manage negative elevation
+    if elevation < 0:
+        altitude_ref = 1
+        elevation *= -1
+    else:
+        altitude_ref = 0
+
     gps_ifd = {
         piexif.GPSIFD.GPSVersionID: (2, 0, 0, 0),
-        piexif.GPSIFD.GPSAltitudeRef: 1,
+        piexif.GPSIFD.GPSAltitudeRef: altitude_ref,
         piexif.GPSIFD.GPSAltitude: change_to_rational(round(elevation)),
         piexif.GPSIFD.GPSLatitudeRef: lat_deg[3],
         piexif.GPSIFD.GPSLatitude: exiv_lat,
@@ -99,6 +106,7 @@ def update_exif(path, photos, gpx_filespec):
         return 0
 
     photos_updated = 0
+    pm.ProgressBar('Update exif', photos_updated, len(photos), "")
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
@@ -109,10 +117,8 @@ def update_exif(path, photos, gpx_filespec):
                 if record.filename == os.path.basename(entry.path):
                     if record.latitude != 0 or record.longitude != 0:
                         # Photo found and there are gps co-ords, so update
-                        pm.ProgressBar('Update exif', photos_updated, len(photos), record.filename)
-                        photos_updated += 1
-
                         gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
+#                        print(gps_dict)
 
                         # Write the data
                         update_time = datetime.strftime(record.timestamp_corrected, "%Y:%m:%d %H:%M:%S")
@@ -122,6 +128,8 @@ def update_exif(path, photos, gpx_filespec):
                         exif_bytes = piexif.dump(exif_dict)
                         jpeg_file = Image.open(entry.path)
                         jpeg_file.save(entry.path, "jpeg", exif=exif_bytes)
+                        photos_updated += 1
+                        pm.ProgressBar('Update exif', photos_updated, len(photos), record.filename)
 
                         # Output a log - need to record when we do this
                         log = ('%s :%s exif updated. Original: %s New: %s'
@@ -135,7 +143,6 @@ def update_exif(path, photos, gpx_filespec):
 
                     # Found and updated so no need to search further
                     break
-
 
     gpx_filename = os.path.basename(gpx_filespec)
     with open(path + os.sep + gpx_filename.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
