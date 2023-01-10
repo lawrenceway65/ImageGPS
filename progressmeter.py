@@ -35,7 +35,7 @@ class ProgressBar:
 #        window['-PHOTO-'].update(filename)
         self.window['-PROGRESS-'].update_bar(progress)
 
-    def Delete(self):
+    def __del__(self):
 
         self.window.close()
         self.window = None

@@ -154,7 +154,7 @@ def update_exif(path, photos, gpx_filespec):
                 i += 1
                 csv_file.write(record.csv_output())
 
-    progress_bar.Delete()
+    del progress_bar
 
     return photos_updated
 

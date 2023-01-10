@@ -98,7 +98,7 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
 
     print('%s matched out of %s' % (photo_count, len(photo_data)))
 
-    progress_bar.Delete()
+    del progress_bar
 
 
 def get_photo_data(path, photo_data, gpx_file=''):
