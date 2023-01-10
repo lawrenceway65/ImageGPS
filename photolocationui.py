@@ -63,7 +63,7 @@ def check_gpx(path):
     return ''
 
 
-def analyse_folder():
+def analyse_folder(selected_index=0):
     """Match locations for the photo in the folder and update the window"""
     ml.match_locations(gpx_filespec, photo_data, path, correction)
     set_data = PhotoSetData(photo_data)
@@ -108,6 +108,7 @@ def analyse_folder():
                                               item.longitude)
         display_list.append(s)
     window['-PHOTOLIST-'].update(display_list)
+    window['-PHOTOLIST-'].update(set_to_index=selected_index)
     window['-WRITE_CHANGES-'].update(disabled=False)
 #    window['-CORRECTION-'].update(disabled=False)
     window['-PLUS1HOUR-'].update(disabled=False)
@@ -189,6 +190,7 @@ window = sg.Window('Find Photo Locations', layout)
 
 latitude = 0.0
 longitude = 0.0
+selected_index = 0
 
 # Main window event loop
 while True:
@@ -218,7 +220,7 @@ while True:
         ml.load_photo_data(path, photo_data)
         if len(photo_data) > 0:
             analyse_folder()
-            selected_photo = photo_data[0]
+            selected_photo = photo_data[selected_index]
             window['-LAT-'].update(selected_photo.latitude)
             window['-LONG-'].update(selected_photo.longitude)
             with Image.open(path + os.sep + selected_photo.filename) as image:
@@ -246,7 +248,9 @@ while True:
         selected = values['-PHOTOLIST-']
         # Only ever one item as it's single select, first token in string is filename
         img_file = selected[0].split()[0]
+        selected_index = 0
         for item in photo_data:
+             selected_index += 1
              if item.filename == img_file:
                  selected_photo = item
                  break
@@ -262,6 +266,7 @@ while True:
             image.thumbnail((275, 275))
             photo_img = ImageTk.PhotoImage(image)
             window['-THUMBNAIL-'].update(data=photo_img)
+        window['-PHOTOLIST-'].update(set_to_index=selected_index)
 
     elif event == '-DISPLAY-':
         webbrowser.open_new_tab(selected_photo.get_osm_link())
@@ -276,32 +281,32 @@ while True:
     elif event == '-PLUS1HOUR-':
         correction += 3600
         window['-CORRECTION-'].update(correction)
-        analyse_folder()
+        analyse_folder(selected_index)
 
     elif event == '-MINUS1HOUR-':
         correction -= 3600
         window['-CORRECTION-'].update(correction)
-        analyse_folder()
+        analyse_folder(selected_index)
 
     elif event == '-PLUS1MIN-':
         correction += 60
         window['-CORRECTION-'].update(correction)
-        analyse_folder()
+        analyse_folder(selected_index)
 
     elif event == '-MINUS1MIN-':
         correction -= 60
         window['-CORRECTION-'].update(correction)
-        analyse_folder()
+        analyse_folder(selected_index)
 
     elif event == '-PLUS15SEC-':
         correction += 15
         window['-CORRECTION-'].update(correction)
-        analyse_folder()
+        analyse_folder(selected_index)
 
     elif event == '-MINUS15SEC-':
         correction -= 15
         window['-CORRECTION-'].update(correction)
-        analyse_folder()
+        analyse_folder(selected_index)
 
     elif event == '-APPLY_CORRECTION-':
         window['-APPLY_CORRECTION-'].update(disabled=True)
