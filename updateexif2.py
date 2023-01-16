@@ -110,7 +110,11 @@ def update_exif(path, photos, gpx_filespec):
     for entry in os.scandir(path):
         if (entry.path.endswith(".jpg")):
             exif_dict = piexif.load(entry.path)
-            original_time = exif_dict['Exif'][DateTimeOriginal].decode()
+            try:
+                original_time = exif_dict['Exif'][DateTimeOriginal].decode()
+            except KeyError:
+                # No or bad gps data so move on
+                continue
 
             # Find the photo in the list
             for record in photos:
@@ -118,7 +122,6 @@ def update_exif(path, photos, gpx_filespec):
                     if record.latitude != 0 or record.longitude != 0:
                         # Photo found and there are gps co-ords, so update
                         gps_dict = create_gps_dict(record.latitude, record.longitude, record.elevation)
-#                        print(gps_dict)
 
                         # Write the data
                         update_time = datetime.strftime(record.timestamp_corrected, "%Y:%m:%d %H:%M:%S")

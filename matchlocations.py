@@ -60,6 +60,7 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
                 point_time = time.localtime(point.time.timestamp())
                 # Apply correction
                 photo_data[photo_count].timestamp_corrected = photo_data[photo_count].timestamp_original + correction
+                print(photo_data[photo_count].timestamp_corrected)
                 photo_time = time.localtime(photo_data[photo_count].timestamp_corrected.timestamp())
                 # Find first photo after start of gpx track
                 while point_time > photo_time:
@@ -114,11 +115,16 @@ def get_photo_data(path, photo_data, gpx_file=''):
             exif_dict = piexif.load(entry.path)
             # Only photos without GPS data already
             if not exif_dict['GPS']:
-                photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+                try:
+                    photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+                except:
+                    print("Missing or bad exif data for %f" % entry.path)
+                    continue
                 rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
                 photo_data.append(rec)
+
     # Sort list by date/time
-    photo_data.sort()
+#    photo_data.sort()
 
     # If file not passed in open now.
     if gpx_file == '':
@@ -151,8 +157,14 @@ def load_photo_data(path, photo_data, load_image_with_gps=False):
             exif_dict = piexif.load(entry.path)
             # Only photos without GPS data already
             if not exif_dict['GPS'] or load_image_with_gps:
-                photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
-                rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
+                # May not be data in file
+                try:
+                    photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
+                    rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
+                except KeyError:
+                    print()
+                    sg.popup_ok('%s\nMissing or bad exif data, file ignored' % os.path.basename(entry.path))
+                    continue
                 photo_data.append(rec)
     # Sort list by date/time
     photo_data.sort()
