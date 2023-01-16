@@ -122,8 +122,9 @@ def analyse_folder(selected_index=0):
 def clear_photo_data():
     """Reset all window fields"""
     photo_data.clear()
-    global correction
+    global correction, selected_index
     correction = 0.0
+    selected_index = 0
 
     window['-PHOTOS-'].update('')
     window['-MATCHED-'].update('')
@@ -250,10 +251,10 @@ while True:
         img_file = selected[0].split()[0]
         selected_index = 0
         for item in photo_data:
-             selected_index += 1
-             if item.filename == img_file:
-                 selected_photo = item
-                 break
+            if item.filename == img_file:
+                selected_photo = item
+                break
+            selected_index += 1
         window['-LAT-'].update(selected_photo.latitude)
         window['-LONG-'].update(selected_photo.longitude)
         # If there are co-ordinates allow display of location map
