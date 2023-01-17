@@ -102,49 +102,6 @@ def match_locations(gpx_filespec, photo_data, path, correction_seconds=0):
     del progress_bar
 
 
-def get_photo_data(path, photo_data, gpx_file=''):
-    """Build list photos with date taken from exif metadata
-    Match photos to gpx track based on time and build list
-    :type path: str
-    :type photo_data: list of PhotoMetaData
-    :type gpx_file: path to gpx file
-    """
-    # Build list of photos
-    for entry in os.scandir(path):
-        if (entry.path.endswith(".jpg")):
-            exif_dict = piexif.load(entry.path)
-            # Only photos without GPS data already
-            if not exif_dict['GPS']:
-                try:
-                    photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
-                except:
-                    print("Missing or bad exif data for %f" % entry.path)
-                    continue
-                rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
-                photo_data.append(rec)
-
-    # Sort list by date/time
-#    photo_data.sort()
-
-    # If file not passed in open now.
-    if gpx_file == '':
-        for entry in os.scandir(path):
-            if (entry.path.endswith(".gpx")):
-                gpx_file = entry.path
-
-    with open(gpx_file, 'r') as file:
-        gpx_data = file.read()
-
-    # Match photo location matching photo time and write results to csv
-    match_locations(gpx_data, photo_data, path)
-    with open(entry.path.replace('.gpx', '') + '_locations.csv', 'w') as csv_file:
-        csv_file.write('Photo,Date/Time,Lat,Long,Link,Location\n')
-        for record in photo_data:
-            csv_file.write(record.csv_output())
-
-    return len(photo_data)
-
-
 def load_photo_data(path, photo_data, load_image_with_gps=False):
     """Build list photos with date taken from exif metadata
     :type path: str
@@ -162,7 +119,6 @@ def load_photo_data(path, photo_data, load_image_with_gps=False):
                     photo_datetime = exif_dict['Exif'][DateTimeOriginal].decode()
                     rec = PhotoMetadata(os.path.basename(entry.path), datetime.strptime(photo_datetime, "%Y:%m:%d %H:%M:%S"))
                 except KeyError:
-                    print()
                     sg.popup_ok('%s\nMissing or bad exif data, file ignored' % os.path.basename(entry.path))
                     continue
                 photo_data.append(rec)
@@ -173,6 +129,5 @@ def load_photo_data(path, photo_data, load_image_with_gps=False):
 
 
 if __name__ == '__main__':
-    photo_data = []
-    get_photo_data(hardcoded_path, photo_data)
+    print('Not to be run!')
 
