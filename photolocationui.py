@@ -218,7 +218,7 @@ while True:
 
     elif event == '-MATCH-':
         clear_photo_data()
-        ml.load_photo_data(path, photo_data)
+        ml.load_photo_data(path, photo_data, True)
         if len(photo_data) > 0:
             analyse_folder()
             selected_photo = photo_data[selected_index]
