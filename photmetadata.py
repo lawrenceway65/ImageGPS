@@ -1,6 +1,7 @@
 """Class to handle metadata"""
 from datetime import datetime
 import subprocess
+import requests
 import json
 
 # path = '/Users/lawrence/Pictures/Photos/2021/2021_03_AddlestoneWalk'
@@ -78,10 +79,9 @@ def get_locality(latitude, longitude):
     """Get location details from co-ordinates, using Open Street Map.
     """
     osm_request = "https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&zoom=20&format=json"
-    result = subprocess.check_output(['curl', '-s', osm_request % (latitude, longitude)]).decode("utf-8")
-    result_json = json.loads(result)
+    result = requests.get(osm_request % (latitude, longitude))
 
     # Return full address for location ('display_name')
-    return result_json['display_name']
+    return result.json()['display_name']
 
 
